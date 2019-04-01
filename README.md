@@ -13,3 +13,9 @@ The source for each of these resides under [cmd/lambda](cmd/lambda).
 This project uses [dep](https://golang.github.io/dep/docs/introduction.html)
 
 Project structured according to https://github.com/golang-standards/project-layout
+
+## TODO
+
+* Script to generate SNS topic
+* Script to deploy each Lambda
+* Maybe even one script to deploy it all!

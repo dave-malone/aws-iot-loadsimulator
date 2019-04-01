@@ -40,7 +40,7 @@ func NewClient(host string, port int, clientID string, tlsConfig *tls.Config) Cl
 		AutoReconnect:        true,
 		MaxReconnectInterval: 1 * time.Second,
 		KeepAlive:            30,
-		TLSConfig:            tlsConfig,
+		TLSConfig:            *tlsConfig,
 	}
 
 	brokerURL := fmt.Sprintf("tcps://%s:%d/mqtt", host, port)
