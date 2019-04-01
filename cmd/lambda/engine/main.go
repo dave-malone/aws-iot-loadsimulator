@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	//TODO - externalize this config
 	sns_topic_arn string = "arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications"
 	one_million   int    = 1000000
 	one           int    = 1

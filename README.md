@@ -1,5 +1,11 @@
-GOOS=linux go build gosim_engine.go
-zip handler.zip ./gosim_engine
+# aws-iot-loadsimulator
 
-GOOS=linux go build gosim_worker.go
-zip handler.zip ./gosim_worker ./golang_thing.* ./root-CA.crt
+A Golang based client simulator for AWS IoT Core intended to be run on Lambda.
+
+Basic architecture:
+
+engine -> SNS -> worker
+
+The source for each of these resides under cmd/lambda. 
+
+Project structured according to https://github.com/golang-standards/project-layout
