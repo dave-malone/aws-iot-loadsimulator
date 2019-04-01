@@ -6,6 +6,10 @@ Basic architecture:
 
 engine -> SNS -> worker
 
-The source for each of these resides under [cmd/lambda](cmd/lambda). 
+The source for each of these resides under [cmd/lambda](cmd/lambda).
+
+## Setup
+
+This project uses [dep](https://golang.github.io/dep/docs/introduction.html)
 
 Project structured according to https://github.com/golang-standards/project-layout
