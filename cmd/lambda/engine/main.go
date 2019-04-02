@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"time"
 
@@ -19,7 +18,7 @@ const (
 	//TODO - externalize this config
 	sns_topic_arn string = "arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications"
 	one_million   int    = 1000000
-	one           int    = 1
+	one_thousand  int    = 1000
 )
 
 func main() {
@@ -37,14 +36,14 @@ func requestHandler(ctx context.Context) (string, error) {
 
 	client := sns.New(sess)
 
-	clientCount := 1000
-	//maxClients := one_million
-	maxClients := one
+	targetTotalConcurrentThings := one_thousand
+	clientsPerWorker := one_thousand
+	totalWorkers := clientsPerWorker / targetTotalConcurrentThings
 
-	for i := 0; i < (maxClients / clientCount); i++ {
+	for i := 0; i < totalWorkers; i++ {
 		simRequest := &loadsim.SimulationRequest{
-			StartClientNumber: (i * clientCount),
-			ClientCount:       clientCount,
+			StartClientNumber: (i * clientsPerWorker),
+			ClientCount:       clientsPerWorker,
 			MessagesPerClient: 250,
 		}
 
@@ -65,7 +64,7 @@ func requestHandler(ctx context.Context) (string, error) {
 
 		fmt.Printf("SNS publish result: %v\n", result)
 
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		time.Sleep(time.Duration(1000) * time.Millisecond)
 	}
 
 	return fmt.Sprintf("Simulation requests generated"), nil
