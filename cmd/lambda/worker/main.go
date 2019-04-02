@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -111,7 +110,7 @@ func publishMessages(clientNumber int, messageCount int, tlsConfig *tls.Config) 
 		}
 
 		log.Printf("[%s] Successfully published message %v\n", clientID, payload)
-		time.Sleep(time.Duration(rand.Intn(3500)) * time.Millisecond)
+		time.Sleep(time.Duration(90) * time.Second)
 	}
 
 	mqttClient.Disconnect(1000)
