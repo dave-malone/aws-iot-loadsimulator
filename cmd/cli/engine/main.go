@@ -1,11 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"os"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
@@ -17,23 +14,22 @@ const (
 )
 
 func main() {
-	lambda.Start(requestHandler)
-}
+	fmt.Println("Running aws-iot-loadsimulator engine")
 
-func requestHandler(ctx context.Context) (string, error) {
 	config := &loadsim.SnsEventEngineConfig{
 		TargetTotalConcurrentThings: one_thousand * 10,
 		ClientsPerWorker:            one_thousand,
 		MessagesToGeneratePerClient: 10,
-		AwsRegion:                   os.Getenv("AWS_REGION"),
+		AwsRegion:                   "us-east-1",
 		AwsSnsTopicARN:              sns_topic_arn,
 		SecondsBetweenEachEvent:     10,
 	}
 
 	engine := loadsim.NewSnsEventEngine(config)
 	if err := engine.GenerateEvents(); err != nil {
-		return "", fmt.Errorf("Failed to generate events: %v", err)
+		fmt.Printf("Failed to generate events: %v", err)
+		return
 	}
 
-	return "Simulation requests generated", nil
+	fmt.Println("Simulation requests generated")
 }
