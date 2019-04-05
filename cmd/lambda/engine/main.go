@@ -10,10 +10,8 @@ import (
 )
 
 const (
-	//TODO - externalize this config
-	sns_topic_arn string = "arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications"
-	one_million   int    = 1000000
-	one_thousand  int    = 1000
+	one_million  int = 1000000
+	one_thousand int = 1000
 )
 
 func main() {
@@ -21,6 +19,11 @@ func main() {
 }
 
 func requestHandler(ctx context.Context) (string, error) {
+	sns_topic_arn := os.Getenv("SNS_TOPIC_ARN")
+	if len(sns_topic_arn) == 0 {
+		return "", fmt.Errorf("Environment variable SNS_TOPIC_ARN not set")
+	}
+
 	config := &loadsim.SnsEventEngineConfig{
 		TargetTotalConcurrentThings: one_thousand * 10,
 		ClientsPerWorker:            one_thousand,

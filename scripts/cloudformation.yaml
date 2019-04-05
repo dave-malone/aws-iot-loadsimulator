@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploys the aws-iot-loadsimulator.
+Parameters:
+  S3BucketName:
+    Description: "Name of the S3 bucket containing the zip files for the Lambda functions deployed by this project"
+    Type: String
+    Default: "aws-iot-loadsimulator"
+Resources:
+  IoTSimulatorNotificationsSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "iot-simulator-notifications"
+  IoTLoadSimulatorEngineLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "iot-simulator-engine-lambda-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  IoTLoadSimulatorWorkerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "iot-simulator-worker-lambda-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  AllowSNSPublishPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: "allow-sns-publish-iot-simulator-notifications"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - "sns:Publish"
+            Resource: !Ref IoTSimulatorNotificationsSNSTopic
+      Roles:
+        -
+          Ref: "IoTLoadSimulatorEngineLambdaRole"
+  IoTLoadSimulatorEngineLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "engine-handler"
+      Role: !GetAtt IoTLoadSimulatorEngineLambdaRole.Arn
+      FunctionName: "iot-simulator-engine"
+      Runtime: go1.x
+      MemorySize: 256
+      Timeout: 60
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: "engine-handler.zip"
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref IoTSimulatorNotificationsSNSTopic
+  IoTLoadSimulatorWorkerLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: "worker-handler"
+      Role: !GetAtt IoTLoadSimulatorWorkerLambdaRole.Arn
+      FunctionName: "iot-simulator-worker"
+      Runtime: go1.x
+      MemorySize: 2048
+      Timeout: 900
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: "worker-handler.zip"
+  IoTLoadSimulatorWorkerLambdaSnsNotificationsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      Endpoint: !GetAtt IoTLoadSimulatorWorkerLambdaFunction.Arn
+      TopicArn: !Ref IoTSimulatorNotificationsSNSTopic
+  IoTLoadSimulatorWorkerLambdaResourcePolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Principal: "sns.amazonaws.com"
+      Action: "lambda:InvokeFunction"
+      FunctionName:  !Ref IoTLoadSimulatorWorkerLambdaFunction
+      SourceArn: !Ref IoTSimulatorNotificationsSNSTopic

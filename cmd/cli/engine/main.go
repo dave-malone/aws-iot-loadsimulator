@@ -2,19 +2,24 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
 const (
-	//TODO - externalize this config
-	sns_topic_arn string = "arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications"
-	one_million   int    = 1000000
-	one_thousand  int    = 1000
+	one_million  int = 1000000
+	one_thousand int = 1000
 )
 
 func main() {
 	fmt.Println("Running aws-iot-loadsimulator engine")
+
+	sns_topic_arn := os.Getenv("SNS_TOPIC_ARN")
+	if len(sns_topic_arn) == 0 {
+		fmt.Println("Environment variable SNS_TOPIC_ARN not set")
+		return
+	}
 
 	config := &loadsim.SnsEventEngineConfig{
 		TargetTotalConcurrentThings: one_thousand * 10,
