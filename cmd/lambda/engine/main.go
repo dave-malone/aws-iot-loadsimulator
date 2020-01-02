@@ -25,12 +25,12 @@ func requestHandler(ctx context.Context) (string, error) {
 	}
 
 	config := &loadsim.SnsEventEngineConfig{
-		TargetTotalConcurrentThings: one_thousand * 10,
-		ClientsPerWorker:            one_thousand,
+		TargetTotalConcurrentThings: 131072,
+		ClientsPerWorker:            1,
 		MessagesToGeneratePerClient: 10,
 		AwsRegion:                   os.Getenv("AWS_REGION"),
 		AwsSnsTopicARN:              sns_topic_arn,
-		SecondsBetweenEachEvent:     10,
+		SecondsBetweenEachEvent:     0,
 	}
 
 	engine := loadsim.NewSnsEventEngine(config)
@@ -38,5 +38,5 @@ func requestHandler(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("Failed to generate events: %v", err)
 	}
 
-	return "Simulation requests generated", nil
+	return fmt.Sprintf("%d Simulation requests generated", config.TargetTotalConcurrentThings), nil
 }

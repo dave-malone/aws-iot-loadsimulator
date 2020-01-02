@@ -3,7 +3,6 @@ package awsiotloadsimulator
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -42,11 +41,10 @@ func (e *SnsEventEngine) GenerateEvents() error {
 	fmt.Printf("clientsPerWorker: %d\n", clientsPerWorker)
 	fmt.Printf("totalWorkers: %d\n", totalWorkers)
 
-	for i := 0; i < totalWorkers; i++ {
+	ConcurrentWorkerExecutor(totalWorkers, e.config.SecondsBetweenEachEvent, func(clientId int) error {
 		simRequest := &SimulationRequest{
-			StartClientNumber: (i * clientsPerWorker),
-			ClientCount:       clientsPerWorker,
-			MessagesPerClient: 10,
+			ClientId:    clientId,
+			ClientCount: clientsPerWorker,
 		}
 
 		messagePayload, err := json.Marshal(simRequest)
@@ -61,14 +59,14 @@ func (e *SnsEventEngine) GenerateEvents() error {
 
 		result, err := client.Publish(input)
 		if err != nil {
-			return fmt.Errorf("Publish error: %v", err)
+			return fmt.Errorf("SNS Publish error: %v", err)
 		}
 
-		fmt.Printf("SNS publish result: %v\n", result)
-		time.Sleep(time.Duration(e.config.SecondsBetweenEachEvent) * time.Second)
-	}
+		fmt.Printf("Simulation Request: %v\nSNS publish result: %v\n", simRequest, result)
 
-	fmt.Printf("%d Simulation requests generated\n", totalWorkers)
+		return nil
+	})
+
 	return nil
 }
 

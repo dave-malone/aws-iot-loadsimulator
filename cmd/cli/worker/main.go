@@ -1,41 +1,44 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
-const (
-	//TODO - externalize config
-	certPath             = "./certs/golang_thing.cert.pem"
-	privateKeyPath       = "./certs/golang_thing.private.key"
-	rootCAPath           = "./certs/root-CA.crt"
-	host                 = "a1tq0bx5we8tnk-ats.iot.us-east-1.amazonaws.com"
-	port                 = 8883
-	clientIDPrefix       = "golang_thing"
-	topicPrefix          = "golang_simulator"
-	maxConcurrentClients = 1000
+var (
+	certPath             = flag.String("cert", "./certs/golang_thing.cert.pem", "path to the certificate")
+	privateKeyPath       = flag.String("private-key", "./certs/golang_thing.private.key", "path to the private key")
+	rootCAPath           = flag.String("root-ca", "./certs/root-CA.crt", "path to the root certificate authority")
+	host                 = flag.String("host", "a1tq0bx5we8tnk-ats.iot.us-east-1.amazonaws.com", "mqtt host number")
+	port                 = flag.Int("port", 8883, "mqtt port number")
+	clientIDPrefix       = flag.String("client-id-prefix", "golang_thing", "prefix to give each mqtt client")
+	topicPrefix          = flag.String("topic-prefix", "golang_simulator", "prefix to use the mqtt topic used by each client")
+	maxConcurrentClients = flag.Int("max-clients", 10, "maximum number of mqtt clients to run")
+	messagesPerClient    = flag.Int("messages-per-client", 10, "messages to generate per client")
 )
 
 func main() {
 	fmt.Println("Running aws-iot-loadsimulator worker")
 
+	flag.Parse()
+
 	event := &loadsim.SimulationRequest{
-		ClientCount:       1000,
-		MessagesPerClient: 10,
+		ClientCount:       *maxConcurrentClients,
+		MessagesPerClient: *messagesPerClient,
 		StartClientNumber: 0,
 	}
 
 	config := &loadsim.Config{
-		CertificatePath:      certPath,
-		PrivateKeyPath:       privateKeyPath,
-		RootCAPath:           rootCAPath,
-		MqttHost:             host,
-		MqttPort:             port,
-		MaxConcurrentClients: maxConcurrentClients,
-		ClientIDPrefix:       clientIDPrefix,
-		TopicPrefix:          topicPrefix,
+		CertificatePath:      *certPath,
+		PrivateKeyPath:       *privateKeyPath,
+		RootCAPath:           *rootCAPath,
+		MqttHost:             *host,
+		MqttPort:             *port,
+		MaxConcurrentClients: *maxConcurrentClients,
+		ClientIDPrefix:       *clientIDPrefix,
+		TopicPrefix:          *topicPrefix,
 	}
 
 	worker, err := loadsim.NewWorker(config)

@@ -63,7 +63,7 @@ Resources:
       FunctionName: "iot-simulator-engine"
       Runtime: go1.x
       MemorySize: 256
-      Timeout: 60
+      Timeout: 900
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: "engine-handler.zip"

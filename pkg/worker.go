@@ -90,7 +90,7 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 		}
 
 		log.Printf("[%s] Successfully published message %v\n", clientID, payload)
-		time.Sleep(time.Duration(90) * time.Second)
+		time.Sleep(time.Duration(10) * time.Second)
 	}
 
 	mqttClient.Disconnect(1000)
