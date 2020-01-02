@@ -41,15 +41,15 @@ func requestHandler(ctx context.Context, snsEvent events.SNSEvent) (string, erro
 		return "", fmt.Errorf("Failed to unmarshall sns message body: %v", err)
 	}
 
-	config := &loadsim.Config{
-		CertificatePath:      certPath,
-		PrivateKeyPath:       privateKeyPath,
-		RootCAPath:           rootCAPath,
-		MqttHost:             host,
-		MqttPort:             port,
-		MaxConcurrentClients: maxConcurrentClients,
-		ClientIDPrefix:       clientIDPrefix,
-		TopicPrefix:          topicPrefix,
+	config := &loadsim.WorkerConfig{
+		CertificatePath:                certPath,
+		PrivateKeyPath:                 privateKeyPath,
+		RootCAPath:                     rootCAPath,
+		MqttHost:                       host,
+		MqttPort:                       port,
+		MaxConnectionRequestsPerSecond: 100,
+		ClientIDPrefix:                 clientIDPrefix,
+		TopicPrefix:                    topicPrefix,
 	}
 
 	worker, err := loadsim.NewWorker(config)

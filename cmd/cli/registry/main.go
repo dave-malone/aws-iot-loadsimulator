@@ -8,8 +8,8 @@ import (
 )
 
 var mode = flag.String("mode", "init", "Executes this program in one of two modes: 'init' or 'cleanup'")
-var total_number_of_things = flag.Int("totalThings", 100, "[Optional] Total Number of things to generate in the thing registry")
-var max_requests_per_second = flag.Int("maxRequestsPerSecond", 15, "[Optional] Maximum number of IoT API requests per second")
+var total_number_of_things = flag.Int("total-things", 100, "[Optional] Total Number of things to generate in the thing registry")
+var max_requests_per_second = flag.Int("max-requests-per-second", 15, "[Optional] Maximum number of IoT API requests per second")
 var aws_region = flag.String("region", "us-east-1", "[Optional] set the target AWS region")
 
 func main() {

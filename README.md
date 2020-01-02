@@ -20,6 +20,27 @@ This project uses [Go Modules](https://blog.golang.org/using-go-modules)
 Project structured according to https://github.com/golang-standards/project-layout
 
 
+## Local Build & Test with CLI Interfaces
+
+Device Registry:
+
+```bash
+go run cmd/cli/registry/main.go -mode init -total-things 1000
+```
+
+Simulation Engine:
+
+```bash
+go run cmd/cli/engine/main.go \
+  -sns-topic-arn arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications
+```
+
+Simulation Worker:
+
+```bash
+go run cmd/cli/worker/main.go -max-clients 300 -messages-per-second 1 -total-messages-per-client 10000
+```
+
 ## Scratch
 
 ```bash

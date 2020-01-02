@@ -2,6 +2,7 @@ package awsiotloadsimulator
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -12,7 +13,7 @@ type DeviceRegistryConfig struct {
 	AwsRegion            string
 	ThingTypeName        string
 	ThingNamePrefix      string
-	MaxRequestsPerSecond int
+	MaxRequestsPerSecond time.Duration
 	TotalNumberOfThings  int
 }
 
@@ -59,15 +60,17 @@ func (dr *DeviceRegistry) Initialize() error {
 		fmt.Println(err.Error())
 	}
 
-	ConcurrentWorkerExecutor(dr.TotalNumberOfThings, dr.MaxRequestsPerSecond, func(thingId int) error {
+	executionDuration := ConcurrentWorkerExecutor(dr.TotalNumberOfThings, dr.MaxRequestsPerSecond, func(thingId int) error {
 		thingName := fmt.Sprintf("%s-%d", dr.ThingNamePrefix, thingId)
 
 		if err := dr.CreateThing(thingName, dr.ThingTypeName); err != nil {
-			return fmt.Errorf("Unable to create thing %s: %v\n", thingName, err)
+			return fmt.Errorf("Unable to create thing %s: %v", thingName, err)
 		}
 
 		return nil
 	})
+
+	fmt.Printf("Device Registry Initialized. Total Execution Time: %v\n", executionDuration)
 
 	return nil
 }
@@ -79,11 +82,11 @@ func (dr *DeviceRegistry) Cleanup() error {
 	// 	fmt.Println(err.Error())
 	// }
 
-	ConcurrentWorkerExecutor(dr.TotalNumberOfThings, dr.MaxRequestsPerSecond, func(thingId int) error {
+	executionDuration := ConcurrentWorkerExecutor(dr.TotalNumberOfThings, dr.MaxRequestsPerSecond, func(thingId int) error {
 		thingName := fmt.Sprintf("%s-%d", dr.ThingNamePrefix, thingId)
 
 		if err := dr.DeleteThing(thingName); err != nil {
-			return fmt.Errorf("Unable to delete thing %s: %v\n", thingName, err)
+			return fmt.Errorf("Unable to delete thing %s: %v", thingName, err)
 		}
 
 		return nil
@@ -92,6 +95,8 @@ func (dr *DeviceRegistry) Cleanup() error {
 	// if err := dr.DeleteThingType(dr.ThingTypeName); err != nil {
 	// 	fmt.Println(err.Error())
 	// }
+
+	fmt.Printf("Device Registry Initialized. Total Execution Time: %v\n", executionDuration)
 
 	return nil
 }
@@ -105,7 +110,7 @@ func (dr *DeviceRegistry) CreateThing(thingName string, thingTypeName string) er
 
 	req, resp := dr.client.CreateThingRequest(params)
 	if err := req.Send(); err != nil {
-		return fmt.Errorf("CreateThingRequest error: %v\nResponse: %v\n", err, resp)
+		return fmt.Errorf("CreateThingRequest error: %v\nResponse: %v", err, resp)
 	}
 
 	fmt.Printf("CreateThing result: %v\n", resp)
@@ -121,8 +126,8 @@ func (dr *DeviceRegistry) CreateThingType(thingTypeName string) error {
 	}
 
 	req, resp := dr.client.CreateThingTypeRequest(params)
-	if err := req.Send(); err != nil { // resp is now filled
-		return fmt.Errorf("Failed to create thing type: %v\nCreateThingType response: %v\n", err, resp)
+	if err := req.Send(); err != nil {
+		return fmt.Errorf("Failed to create thing type: %v\nCreateThingType response: %v", err, resp)
 	}
 
 	fmt.Printf("CreateThingType result: %v\n", resp)
@@ -139,7 +144,7 @@ func (dr *DeviceRegistry) DeleteThing(thingName string) error {
 
 	req, resp := dr.client.DeleteThingRequest(params)
 	if err := req.Send(); err != nil {
-		return fmt.Errorf("DeleteThingRequest error: %v\nDeleteThing response: %v\n", err, resp)
+		return fmt.Errorf("DeleteThingRequest error: %v\nDeleteThing response: %v", err, resp)
 	}
 
 	fmt.Printf("DeleteThing result: %v\n", resp)
@@ -155,8 +160,8 @@ func (dr *DeviceRegistry) DeleteThingType(thingTypeName string) error {
 	}
 
 	req, resp := dr.client.DeleteThingTypeRequest(deleteThingTypeInput)
-	if err := req.Send(); err != nil { // resp is now filled
-		return fmt.Errorf("Failed to delete thing type: %v\nDeleteThingType response: %v\n", err, resp)
+	if err := req.Send(); err != nil {
+		return fmt.Errorf("Failed to delete thing type: %v\nDeleteThingType response: %v", err, resp)
 	}
 
 	fmt.Printf("DeleteThingType result: %v\n", resp)
@@ -171,8 +176,8 @@ func (dr *DeviceRegistry) DeprecateThingType(thingTypeName string) error {
 	}
 
 	req, resp := dr.client.DeprecateThingTypeRequest(params)
-	if err := req.Send(); err != nil { // resp is now filled
-		return fmt.Errorf("Failed to deprecate thing type: %v\nDepcrecateThingType response: %v\n", err, resp)
+	if err := req.Send(); err != nil {
+		return fmt.Errorf("Failed to deprecate thing type: %v\nDepcrecateThingType response: %v", err, resp)
 	}
 
 	fmt.Printf("DeprecateThingType result: %v\n", resp)

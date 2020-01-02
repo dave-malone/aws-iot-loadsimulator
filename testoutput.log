@@ -1,0 +1,4 @@
+Running aws-iot-loadsimulator worker
+Failed to publish messages: [golang_thing-247] Failed to get connection token: Network Error : dial tcp: lookup a1tq0bx5we8tnk-ats.iot.us-east-1.amazonaws.com: no such host
+Failed to publish messages: [golang_thing-248] Failed to get connection token: Network Error : dial tcp: lookup a1tq0bx5we8tnk-ats.iot.us-east-1.amazonaws.com: no such host
+Failed to publish messages: [golang_thing-249] Failed to get connection token: Network Error : dial tcp: lookup a1tq0bx5we8tnk-ats.iot.us-east-1.amazonaws.com: no such host

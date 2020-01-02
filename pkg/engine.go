@@ -3,6 +3,7 @@ package awsiotloadsimulator
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,16 +16,16 @@ type SnsEventEngineConfig struct {
 	MessagesToGeneratePerClient int
 	AwsRegion                   string
 	AwsSnsTopicARN              string
-	SecondsBetweenEachEvent     int
+	SecondsBetweenEachEvent     time.Duration
 }
 
 type SnsEventEngine struct {
-	config *SnsEventEngineConfig
+	SnsEventEngineConfig
 }
 
 func (e *SnsEventEngine) GenerateEvents() error {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(e.config.AwsRegion),
+		Region: aws.String(e.AwsRegion),
 	})
 
 	if err != nil {
@@ -33,15 +34,15 @@ func (e *SnsEventEngine) GenerateEvents() error {
 
 	client := sns.New(sess)
 
-	targetTotalConcurrentThings := e.config.TargetTotalConcurrentThings
-	clientsPerWorker := e.config.ClientsPerWorker
+	targetTotalConcurrentThings := e.TargetTotalConcurrentThings
+	clientsPerWorker := e.ClientsPerWorker
 	totalWorkers := targetTotalConcurrentThings / clientsPerWorker
 
 	fmt.Printf("targetTotalConcurrentThings: %d\n", targetTotalConcurrentThings)
 	fmt.Printf("clientsPerWorker: %d\n", clientsPerWorker)
 	fmt.Printf("totalWorkers: %d\n", totalWorkers)
 
-	ConcurrentWorkerExecutor(totalWorkers, e.config.SecondsBetweenEachEvent, func(clientId int) error {
+	executionDuration := ConcurrentWorkerExecutor(totalWorkers, e.SecondsBetweenEachEvent, func(clientId int) error {
 		simRequest := &SimulationRequest{
 			ClientId:    clientId,
 			ClientCount: clientsPerWorker,
@@ -54,7 +55,7 @@ func (e *SnsEventEngine) GenerateEvents() error {
 
 		input := &sns.PublishInput{
 			Message:  aws.String(string(messagePayload)),
-			TopicArn: aws.String(e.config.AwsSnsTopicARN),
+			TopicArn: aws.String(e.AwsSnsTopicARN),
 		}
 
 		result, err := client.Publish(input)
@@ -67,11 +68,13 @@ func (e *SnsEventEngine) GenerateEvents() error {
 		return nil
 	})
 
+	fmt.Printf("Simulation Requests generated. Total Execution Time: %v\n", executionDuration)
+
 	return nil
 }
 
 func NewSnsEventEngine(config *SnsEventEngineConfig) *SnsEventEngine {
 	return &SnsEventEngine{
-		config: config,
+		SnsEventEngineConfig: *config,
 	}
 }

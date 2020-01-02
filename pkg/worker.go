@@ -4,74 +4,60 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/dave-malone/aws-iot-loadsimulator/pkg/mqtt"
 )
 
-type Config struct {
-	CertificatePath      string
-	PrivateKeyPath       string
-	RootCAPath           string
-	MqttHost             string
-	MqttPort             int
-	MaxConcurrentClients int
-	ClientIDPrefix       string
-	TopicPrefix          string
+type WorkerConfig struct {
+	CertificatePath                string
+	PrivateKeyPath                 string
+	RootCAPath                     string
+	MqttHost                       string
+	MqttPort                       int
+	MaxConnectionRequestsPerSecond time.Duration
+	ClientIDPrefix                 string
+	TopicPrefix                    string
 }
 
 type Worker struct {
-	config    *Config
+	WorkerConfig
 	tlsConfig *tls.Config
 }
 
-func NewWorker(config *Config) (*Worker, error) {
+func NewWorker(config *WorkerConfig) (*Worker, error) {
 	tlsConfig, err := mqtt.NewTlsConfig(config.CertificatePath, config.PrivateKeyPath, config.RootCAPath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize tls.Config: %v", err)
 	}
 
 	worker := &Worker{
-		config:    config,
-		tlsConfig: tlsConfig,
+		WorkerConfig: *config,
+		tlsConfig:    tlsConfig,
 	}
 
 	return worker, nil
 }
 
 func (w *Worker) RunConcurrentlyPublishingClients(simReq *SimulationRequest) (string, error) {
-	var wg sync.WaitGroup
-	sem := make(chan int, w.config.MaxConcurrentClients)
-	start := time.Now()
+	executionDuration := ConcurrentWorkerExecutor(simReq.ClientCount, w.MaxConnectionRequestsPerSecond, func(thingId int) error {
+		clientId := simReq.StartClientNumber + thingId
+		if err := w.publishMessages(clientId, simReq); err != nil {
+			fmt.Printf("Failed to publish messages: %v\n", err)
+		}
 
-	clientNumberMax := simReq.StartClientNumber + simReq.ClientCount
+		return nil
+	})
 
-	for clientNumber := simReq.StartClientNumber; clientNumber < clientNumberMax; clientNumber++ {
-		wg.Add(1)
-		go func(clientNumber int, simReq *SimulationRequest) {
-			sem <- 1
-			go func(clientNumber int, simReq *SimulationRequest) {
-				defer wg.Done()
-				if err := w.publishMessages(clientNumber, simReq); err != nil {
-					fmt.Printf("Failed to publish messages: %v\n", err)
-				}
-				<-sem
-			}(clientNumber, simReq)
-		}(clientNumber, simReq)
-	}
-
-	wg.Wait()
-	elapsed := time.Since(start)
-	return fmt.Sprintf("simulation complete; execution time: %s", elapsed), nil
+	return fmt.Sprintf("Simulation complete. Total Execution time: %v", executionDuration), nil
 }
 
 func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) error {
-	clientID := fmt.Sprintf("%s-%d", w.config.ClientIDPrefix, clientNumber)
+	clientID := fmt.Sprintf("%s-%d", w.ClientIDPrefix, clientNumber)
 	//TODO - allow for topic to be injected with support for placeholders
-	topic := fmt.Sprintf("%s/%s", w.config.TopicPrefix, clientID)
+	topic := fmt.Sprintf("%s/%s", w.TopicPrefix, clientID)
 
-	mqttClient := mqtt.NewClient(w.config.MqttHost, w.config.MqttPort, clientID, w.tlsConfig)
+	mqttClient := mqtt.NewClient(w.MqttHost, w.MqttPort, clientID, w.tlsConfig)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("[%s] Failed to get connection token: %v", clientID, token.Error())
 	}
@@ -90,7 +76,7 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 		}
 
 		log.Printf("[%s] Successfully published message %v\n", clientID, payload)
-		time.Sleep(time.Duration(10) * time.Second)
+		time.Sleep(time.Duration(simReq.SecondsBetweenMessages) * time.Second)
 	}
 
 	mqttClient.Disconnect(1000)

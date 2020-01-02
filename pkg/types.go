@@ -9,40 +9,44 @@ import (
 type workerFunc func(int) error
 
 type SimulationRequest struct {
-	StartClientNumber int `json:"start_client_num"`
-	ClientCount       int `json:"client_count"`
-	MessagesPerClient int `json:"messages_per_client"`
-	ClientId          int `json:"client-id"`
+	StartClientNumber      int     `json:"start_client_num"`
+	ClientCount            int     `json:"client_count"`
+	MessagesPerClient      int     `json:"messages_per_client"`
+	SecondsBetweenMessages float64 `json:"seconds_between_messages"`
+	ClientId               int     `json:"client-id"`
 }
 
-func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond int, fn workerFunc) {
+func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond time.Duration, fn workerFunc) time.Duration {
 	var wg sync.WaitGroup
 	wg.Add(totalWorkers)
 
 	start := time.Now()
-	sem := make(chan int, maxExecutionsPerSecond)
+	// sem := make(chan int, maxExecutionsPerSecond)
+
+	rate := time.Second / maxExecutionsPerSecond
+	throttle := time.Tick(rate)
 
 	for i := 0; i < totalWorkers; i++ {
+		<-throttle // rate limit our Service.Method RPCs
+
+		// go func(thingId int) {
+		// 	sem <- 1
+
 		go func(thingId int) {
-			sem <- 1
+			defer wg.Done()
 
-			go func(thingId int) {
-				defer wg.Done()
+			if err := fn(thingId); err != nil {
+				fmt.Println(err.Error())
+				return
+			}
 
-				if err := fn(thingId); err != nil {
-					fmt.Println(err.Error())
-					return
-				}
-
-				<-sem
-			}(i)
+			// <-sem
 		}(i)
-
-		time.Sleep(time.Duration(1000/maxExecutionsPerSecond) * time.Millisecond)
+		// }(i)
 	}
 
 	wg.Wait()
 
 	elapsed := time.Since(start)
-	fmt.Printf("total execution time: %s\n", elapsed)
+	return elapsed
 }
