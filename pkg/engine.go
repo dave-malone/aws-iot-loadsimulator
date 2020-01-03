@@ -47,7 +47,9 @@ func (e *SnsEventEngine) GenerateEvents() (int, error) {
 		simRequest := &SimulationRequest{
 			ClientId:               clientId,
 			ClientCount:            clientsPerWorker,
+			StartClientNumber: clientId * clientsPerWorker,
 			SecondsBetweenMessages: e.SecondsBetweenMessages,
+			MessagesPerClient: e.MessagesToGeneratePerClient,
 		}
 
 		messagePayload, err := json.Marshal(simRequest)

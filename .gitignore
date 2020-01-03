@@ -3,3 +3,4 @@
 *.public.key
 build/
 *.log
+scripts/packaged.yml

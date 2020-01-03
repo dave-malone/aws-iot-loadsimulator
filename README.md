@@ -48,31 +48,12 @@ go run cmd/cli/worker/main.go -max-clients 100 -seconds-between-messages 10 -tot
 ./scripts/deploy-sam.sh
 ```
 
-#### Scratch
+## TODO
 
-```bash
-THING_TYPE_NAME="simulated-thing"
-
-aws iot create-thing-type --thing-type-name $THING_TYPE_NAME
-
-# setup
-
-END=50
-for ((i=0;i<=END;i++)); do
-    THING_NAME="golang_thing-$i"
-    echo "creating thing $THING_NAME"
-    aws iot create-thing --thing-name $THING_NAME --thing-type-name $THING_TYPE_NAME
-done
-
-# cleanup
-
-END=50
-for ((i=0;i<=END;i++)); do
-    THING_NAME="golang_thing-$i"
-    echo "deleting thing $THING_NAME"
-    aws iot delete-thing --thing-name $THING_NAME
-done
-
-
-aws iot delete-thing-type --thing-type-name $THING_TYPE_NAME
-```
+* Build simple UI to kick off device simulation, view device simulation stats
+* Add CW Metric Dashboards into CW templates
+* Can't use fleet indexing metrics without things being registered in the device registry
+* Current issue with populating device registry is the max rate at which we can call CreateThing (default 15 TPS); this makes populating the device registry for large scale simulations potentially lengthy (100,000 items created using CreateThing at that rate would take about 1.85 hours to complete).
+* Could rely on [AWS IoT Lifecycle Events](https://docs.aws.amazon.com/iot/latest/developerguide/life-cycle-events.html) to get fleet online / offline state, but would need to offload to something that can handle atomic update requests - i.e. Redis
+* As part of the demo, can we illustrate the use of Fine-Grained Logging on a select group of things? https://docs.aws.amazon.com/iot/latest/developerguide/cloud-watch-logs.html#configure-logging
+* Demonstrate blue/green deployment change to a Rule 
