@@ -38,7 +38,7 @@ go run cmd/cli/engine/main.go \
 Simulation Worker:
 
 ```bash
-go run cmd/cli/worker/main.go -max-clients 300 -messages-per-second 1 -total-messages-per-client 10000
+go run cmd/cli/worker/main.go -max-clients 100 -seconds-between-messages 10 -total-messages-per-client 5
 ```
 
 ## Scratch
