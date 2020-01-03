@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
 
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
 var total_number_of_things = flag.Int("total-things", 1000, "[Optional] Total Number of things to generate in the thing registry")
 var clients_per_worker = flag.Int("clients-per-worker", 300, "[Optional] Maximum number of concurrent clients per worker")
-var seconds_between_each_event = flag.Int64("seconds-between-events", 5, "[Optional] Number of Seconds to wait between publishing SNS notifications")
+var seconds_between_each_event = flag.Int("seconds-between-events", 5, "[Optional] Number of Seconds to wait between publishing SNS notifications")
 var aws_region = flag.String("region", "us-east-1", "[Optional] set the target AWS region")
 var sns_topic_arn = flag.String("sns-topic-arn", "", "The SNS Topic ARN which the events will be generated")
 
@@ -30,14 +29,15 @@ func main() {
 		MessagesToGeneratePerClient: 10,
 		AwsRegion:                   *aws_region,
 		AwsSnsTopicARN:              *sns_topic_arn,
-		SecondsBetweenEachEvent:     time.Duration(*seconds_between_each_event),
+		SecondsBetweenEachEvent:     *seconds_between_each_event,
 	}
 
 	engine := loadsim.NewSnsEventEngine(config)
-	if err := engine.GenerateEvents(); err != nil {
+	notificationCount, err := engine.GenerateEvents()
+	if err != nil {
 		fmt.Printf("Failed to generate events: %v", err)
 		return
 	}
 
-	fmt.Println("Simulation requests generated")
+	fmt.Printf("%d Simulation requests generated\n", notificationCount)
 }

@@ -11,25 +11,26 @@ import (
 )
 
 type SnsEventEngineConfig struct {
-	TargetTotalConcurrentThings int
-	ClientsPerWorker            int
-	MessagesToGeneratePerClient int
+	TargetTotalConcurrentThings int `json:"total-things"`
+	ClientsPerWorker            int `json:"clients-per-worker"`
+	MessagesToGeneratePerClient int `json:"total-messages-per-client"`
 	AwsRegion                   string
 	AwsSnsTopicARN              string
-	SecondsBetweenEachEvent     time.Duration
+	SecondsBetweenEachEvent     int `json:"seconds-between-sns-events"`
+	SecondsBetweenMessages      int `json:"seconds-between-mqtt-messages"`
 }
 
 type SnsEventEngine struct {
 	SnsEventEngineConfig
 }
 
-func (e *SnsEventEngine) GenerateEvents() error {
+func (e *SnsEventEngine) GenerateEvents() (int, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(e.AwsRegion),
 	})
 
 	if err != nil {
-		return fmt.Errorf("Failed to initialize New AWS Session: %v", err)
+		return 0, fmt.Errorf("Failed to initialize New AWS Session: %v", err)
 	}
 
 	client := sns.New(sess)
@@ -42,10 +43,11 @@ func (e *SnsEventEngine) GenerateEvents() error {
 	fmt.Printf("clientsPerWorker: %d\n", clientsPerWorker)
 	fmt.Printf("totalWorkers: %d\n", totalWorkers)
 
-	executionDuration := ConcurrentWorkerExecutor(totalWorkers, e.SecondsBetweenEachEvent, func(clientId int) error {
+	executionDuration := ConcurrentWorkerExecutor(totalWorkers, time.Duration(e.SecondsBetweenEachEvent), func(clientId int) error {
 		simRequest := &SimulationRequest{
-			ClientId:    clientId,
-			ClientCount: clientsPerWorker,
+			ClientId:               clientId,
+			ClientCount:            clientsPerWorker,
+			SecondsBetweenMessages: e.SecondsBetweenMessages,
 		}
 
 		messagePayload, err := json.Marshal(simRequest)
@@ -70,7 +72,7 @@ func (e *SnsEventEngine) GenerateEvents() error {
 
 	fmt.Printf("Simulation Requests generated. Total Execution Time: %v\n", executionDuration)
 
-	return nil
+	return totalWorkers, nil
 }
 
 func NewSnsEventEngine(config *SnsEventEngineConfig) *SnsEventEngine {

@@ -13,6 +13,7 @@ The source for each of these resides under [cmd/lambda](cmd/lambda).
 Golang 1.12
 AWS Account
 AWS CLI
+[SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 
 
 This project uses [Go Modules](https://blog.golang.org/using-go-modules)
@@ -41,7 +42,13 @@ Simulation Worker:
 go run cmd/cli/worker/main.go -max-clients 100 -seconds-between-messages 10 -total-messages-per-client 5
 ```
 
-## Scratch
+## Deploy Simulator Lambda Functions
+
+```bash
+./scripts/deploy-sam.sh
+```
+
+#### Scratch
 
 ```bash
 THING_TYPE_NAME="simulated-thing"

@@ -9,11 +9,11 @@ import (
 type workerFunc func(int) error
 
 type SimulationRequest struct {
-	StartClientNumber      int     `json:"start_client_num"`
-	ClientCount            int     `json:"client_count"`
-	MessagesPerClient      int     `json:"messages_per_client"`
-	SecondsBetweenMessages float64 `json:"seconds_between_messages"`
-	ClientId               int     `json:"client-id"`
+	StartClientNumber      int `json:"start_client_num"`
+	ClientCount            int `json:"client_count"`
+	MessagesPerClient      int `json:"messages_per_client"`
+	SecondsBetweenMessages int `json:"seconds_between_messages"`
+	ClientId               int `json:"client-id"`
 }
 
 func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond time.Duration, fn workerFunc) time.Duration {

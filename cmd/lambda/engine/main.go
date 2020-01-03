@@ -9,34 +9,48 @@ import (
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
-const (
-	one_million  int = 1000000
-	one_thousand int = 1000
-)
-
 func main() {
 	lambda.Start(requestHandler)
 }
 
-func requestHandler(ctx context.Context) (string, error) {
-	sns_topic_arn := os.Getenv("SNS_TOPIC_ARN")
-	if len(sns_topic_arn) == 0 {
+func requestHandler(ctx context.Context, config loadsim.SnsEventEngineConfig) (string, error) {
+	fmt.Printf("Received event: %v\n", config)
+
+	snsTopicArn := os.Getenv("SNS_TOPIC_ARN")
+	if len(snsTopicArn) == 0 {
 		return "", fmt.Errorf("Environment variable SNS_TOPIC_ARN not set")
 	}
 
-	config := &loadsim.SnsEventEngineConfig{
-		TargetTotalConcurrentThings: 131072,
-		ClientsPerWorker:            1,
-		MessagesToGeneratePerClient: 10,
-		AwsRegion:                   os.Getenv("AWS_REGION"),
-		AwsSnsTopicARN:              sns_topic_arn,
-		SecondsBetweenEachEvent:     0,
+	config.AwsRegion = os.Getenv("AWS_REGION")
+	config.AwsSnsTopicARN = snsTopicArn
+
+	if config.TargetTotalConcurrentThings < 1 {
+		config.TargetTotalConcurrentThings = 1
 	}
 
-	engine := loadsim.NewSnsEventEngine(config)
-	if err := engine.GenerateEvents(); err != nil {
+	if config.ClientsPerWorker < 1 {
+		config.ClientsPerWorker = 1
+	}
+
+	if config.MessagesToGeneratePerClient < 1 {
+		config.MessagesToGeneratePerClient = 10
+	}
+
+	if config.SecondsBetweenEachEvent < 1 {
+		config.SecondsBetweenEachEvent = 5
+	}
+
+	if config.SecondsBetweenMessages < 1 {
+		config.SecondsBetweenMessages = 10
+	}
+
+	fmt.Printf("Generating SNS Notifications using the following configuration: %v\n", config)
+
+	engine := loadsim.NewSnsEventEngine(&config)
+	notificationCount, err := engine.GenerateEvents()
+	if err != nil {
 		return "", fmt.Errorf("Failed to generate events: %v", err)
 	}
 
-	return fmt.Sprintf("%d Simulation requests generated", config.TargetTotalConcurrentThings), nil
+	return fmt.Sprintf("%d Simulation requests generated", notificationCount), nil
 }

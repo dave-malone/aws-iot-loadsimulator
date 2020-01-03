@@ -17,7 +17,7 @@ var (
 	topicPrefix            = flag.String("topic-prefix", "golang_simulator", "prefix to use the mqtt topic used by each client")
 	maxConcurrentClients   = flag.Int("max-clients", 10, "maximum number of mqtt clients to run")
 	messagesPerClient      = flag.Int("total-messages-per-client", 10, "messages to generate per client")
-	secondsBetweenMessages = flag.Float64("seconds-between-messages", 1, "number of seconds to wait between publish calls per client")
+	secondsBetweenMessages = flag.Int("seconds-between-messages", 1, "number of seconds to wait between publish calls per client")
 )
 
 func main() {

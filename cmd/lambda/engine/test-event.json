@@ -1,0 +1,7 @@
+{
+  "total-things": 300,
+  "clients-per-worker": 300,
+  "total-messages-per-client": 10,
+  "seconds-between-sns-events": 5,
+  "seconds-between-mqtt-messages": 10
+}
