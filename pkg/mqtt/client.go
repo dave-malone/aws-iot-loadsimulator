@@ -35,17 +35,30 @@ func (c *client) PublishAsJson(payload interface{}, topic string, qos byte) erro
 
 func NewClient(host string, port int, clientID string, tlsConfig *tls.Config) Client {
 	clientOpts := &pahomqtt.ClientOptions{
+		AutoReconnect:        true,
 		ClientID:             clientID,
 		CleanSession:         true,
-		AutoReconnect:        true,
-		MaxReconnectInterval: 1 * time.Second,
 		KeepAlive:            30,
-		TLSConfig:            tlsConfig,
+		MaxReconnectInterval: 5 * time.Second,
+		PingTimeout:          30 * time.Second,
 		ProtocolVersion:      3,
+		TLSConfig:            tlsConfig,
 	}
 
 	brokerURL := fmt.Sprintf("tcps://%s:%d/mqtt", host, port)
 	clientOpts.AddBroker(brokerURL)
+
+	clientOpts.SetOnConnectHandler(func(client pahomqtt.Client) {
+		fmt.Printf("[%s] connected\n", clientID)
+	})
+
+	clientOpts.SetConnectionLostHandler(func(client pahomqtt.Client, err error) {
+		fmt.Printf("[%s] connection lost: %v\n", clientID, err)
+	})
+
+	// clientOpts.SetReconnectingHandler(func(client pahomqtt.Client, options *pahomqtt.ClientOptions) {
+	// 	fmt.Printf("[%s] reconnecting\n", clientID)
+	// })
 
 	return &client{
 		Client: pahomqtt.NewClient(clientOpts),

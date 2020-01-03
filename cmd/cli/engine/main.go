@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
 
 var total_number_of_things = flag.Int("total-things", 1000, "[Optional] Total Number of things to generate in the thing registry")
 var clients_per_worker = flag.Int("clients-per-worker", 300, "[Optional] Maximum number of concurrent clients per worker")
-var max_requests_per_second = flag.Int("max-requests-per-second", 15, "[Optional] Maximum number of IoT API requests per second")
+var seconds_between_each_event = flag.Int64("seconds-between-events", 5, "[Optional] Number of Seconds to wait between publishing SNS notifications")
 var aws_region = flag.String("region", "us-east-1", "[Optional] set the target AWS region")
 var sns_topic_arn = flag.String("sns-topic-arn", "", "The SNS Topic ARN which the events will be generated")
 
@@ -29,7 +30,7 @@ func main() {
 		MessagesToGeneratePerClient: 10,
 		AwsRegion:                   *aws_region,
 		AwsSnsTopicARN:              *sns_topic_arn,
-		SecondsBetweenEachEvent:     *max_requests_per_second,
+		SecondsBetweenEachEvent:     time.Duration(*seconds_between_each_event),
 	}
 
 	engine := loadsim.NewSnsEventEngine(config)

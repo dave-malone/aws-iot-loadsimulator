@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
@@ -21,7 +22,7 @@ func main() {
 		AwsRegion:            *aws_region,
 		ThingNamePrefix:      "golang_thing",
 		ThingTypeName:        "simulated-thing",
-		MaxRequestsPerSecond: *max_requests_per_second,
+		MaxRequestsPerSecond: time.Duration(*max_requests_per_second),
 		TotalNumberOfThings:  *total_number_of_things,
 	}
 
