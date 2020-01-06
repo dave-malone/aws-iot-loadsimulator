@@ -60,7 +60,7 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 
 	mqttClient := mqtt.NewClient(w.MqttHost, w.MqttPort, clientID, w.tlsConfig)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("[%s] Failed to get connection token: %v", clientID, token.Error())
+		return fmt.Errorf("[%s] Failed to get connection token: %s", clientID, token.Error().Error())
 	}
 
 	log.Printf("[%s] Connected\n", clientID)

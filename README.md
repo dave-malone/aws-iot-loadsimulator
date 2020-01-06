@@ -30,7 +30,7 @@ AWS IoT Rules Engine | Inbound publish requests per second per account | 20,000 
 AWS Lambda | Concurrent executions | 1,000 | Yes
 AWS Lambda | Function timeout | 900 seconds (15 minutes) | No
 AWS Lambda | File descriptors | 1,024 | No
-AWS Lambda | Execution processes/threads | 1,024 | No 
+AWS Lambda | Execution processes/threads | 1,024 | No
 Amazon SNS | Publish (US East Region) | 30,000 per second | Yes
 
 * https://docs.aws.amazon.com/iot/latest/developerguide/limits-iot.html
@@ -43,19 +43,24 @@ Simulation Engine:
 
 ```bash
 go run cmd/cli/engine/main.go \
-  -sns-topic-arn arn:aws:sns:us-east-1:068311527115:iot_simulator_notifications
+  -sns-topic-arn arn:aws:sns:us-east-1:xxxxxxxxxxxx:iot_simulator_notifications
 ```
 
 Simulation Worker:
 
 ```bash
-go run cmd/cli/worker/main.go -max-clients 100 -seconds-between-messages 10 -total-messages-per-client 5
+go run cmd/cli/worker/main.go \
+  -max-clients 100 \
+  -seconds-between-messages 10 \
+  -total-messages-per-client 5
 ```
 
 Device Registry:
 
 ```bash
-go run cmd/cli/registry/main.go -mode init -total-things 1000
+go run cmd/cli/registry/main.go \
+  -mode init \
+  -total-things 1000
 ```
 
 ## Deploy Simulator Lambda Functions
@@ -64,16 +69,29 @@ go run cmd/cli/registry/main.go -mode init -total-things 1000
 ./scripts/deploy-sam.sh
 ```
 
-## TODO
+## Backlog
 
-* Build simple UI to kick off device simulation, view device simulation stats
+Really Want for demo:
+* ~~Aggregate Log messages in ElasticSearch?~~
 * Add CW Metric Dashboards into CW templates
+* Build simple UI to kick off device simulation, view device simulation stats
+* Could rely on [AWS IoT Lifecycle Events](https://docs.aws.amazon.com/iot/latest/developerguide/life-cycle-events.html) to get fleet online / offline state, but would need to offload to something that can handle atomic update requests - i.e. Redis
+* Demonstrate blue/green deployment change to a Rule
+* Measuring latency across the hops
+* "Injectable" message payload
+* Externalize configuration in cmd/cli/lambda/worker/main.go
+* Aaron's work to measure p99s, analyze performance data in Athena
+
+
+Nice to haves:
 * Embed CW Metrics dashboard in UI?
 * View relevant Service Limits in UI?
+* Anything interesting to show in DD?
+* As part of the demo, can we illustrate the use of Fine-Grained Logging on a select group of things? https://docs.aws.amazon.com/iot/latest/developerguide/cloud-watch-logs.html#configure-logging
+* Multiple message types with their own publishing scheduling
+
+Lessons Learned:
 * Can't use fleet indexing metrics without things being registered in the device registry
 * Current issue with populating device registry is the max rate at which we can call CreateThing (default 15 TPS); this makes populating the device registry for large scale simulations potentially lengthy (100,000 items created using CreateThing at that rate would take about 1.85 hours to complete).
-* Could rely on [AWS IoT Lifecycle Events](https://docs.aws.amazon.com/iot/latest/developerguide/life-cycle-events.html) to get fleet online / offline state, but would need to offload to something that can handle atomic update requests - i.e. Redis
-* As part of the demo, can we illustrate the use of Fine-Grained Logging on a select group of things? https://docs.aws.amazon.com/iot/latest/developerguide/cloud-watch-logs.html#configure-logging
-* Demonstrate blue/green deployment change to a Rule
-* Anything interesting to show in DD?
-* Aggregate Log messages in ElasticSearch?
+* Aaron's story about using ECS instead (also add some points to the presentation)
+* Lambda limits in total across the AWS account
