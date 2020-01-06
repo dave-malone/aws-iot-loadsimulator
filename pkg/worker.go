@@ -78,7 +78,7 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 
 		log.Printf("[%s] Successfully published message %v\n", clientID, payload)
 		sleepFor := time.Duration(simReq.SecondsBetweenMessages) * time.Second
-		log.Printf("[%s] sleeping %f seconds", clientID, sleepFor.Seconds())
+		log.Printf("[%s] sleeping %.f seconds", clientID, sleepFor.Seconds())
 		time.Sleep(sleepFor)
 	}
 

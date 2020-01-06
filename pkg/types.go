@@ -36,16 +36,12 @@ func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond time.Dura
 	wg.Add(totalWorkers)
 
 	start := time.Now()
-	// sem := make(chan int, maxExecutionsPerSecond)
 
 	rate := time.Second / maxExecutionsPerSecond
 	throttle := time.Tick(rate)
 
 	for i := 0; i < totalWorkers; i++ {
 		<-throttle // rate limit our Service.Method RPCs
-
-		// go func(thingId int) {
-		// 	sem <- 1
 
 		go func(thingId int) {
 			defer wg.Done()
@@ -54,10 +50,7 @@ func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond time.Dura
 				fmt.Println(err.Error())
 				return
 			}
-
-			// <-sem
 		}(i)
-		// }(i)
 	}
 
 	wg.Wait()
