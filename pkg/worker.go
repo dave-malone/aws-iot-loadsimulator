@@ -40,6 +40,7 @@ func NewWorker(config *WorkerConfig) (*Worker, error) {
 }
 
 func (w *Worker) RunConcurrentlyPublishingClients(simReq *SimulationRequest) (string, error) {
+	fmt.Printf("Initializing %d concurrent mqtt clients\n", simReq.ClientCount)
 	executionDuration := ConcurrentWorkerExecutor(simReq.ClientCount, w.MaxConnectionRequestsPerSecond, func(thingId int) error {
 		clientId := simReq.StartClientNumber + thingId
 		if err := w.publishMessages(clientId, simReq); err != nil {
@@ -76,7 +77,9 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 		}
 
 		log.Printf("[%s] Successfully published message %v\n", clientID, payload)
-		time.Sleep(time.Duration(simReq.SecondsBetweenMessages) * time.Second)
+		sleepFor := time.Duration(simReq.SecondsBetweenMessages) * time.Second
+		log.Printf("[%s] sleeping %f seconds", clientID, sleepFor.Seconds())
+		time.Sleep(sleepFor)
 	}
 
 	mqttClient.Disconnect(1000)

@@ -20,6 +20,21 @@ type SnsEventEngineConfig struct {
 	SecondsBetweenMessages      int `json:"seconds-between-mqtt-messages"`
 }
 
+func (s SnsEventEngineConfig) String() string {
+	return fmt.Sprintf(`SnsEventEngineConfig
+		TargetTotalConcurrentThings: %d
+		MessagesToGeneratePerClient: %d
+		SecondsBetweenEachEvent: %d
+		SecondsBetweenMessages: %d
+		ClientsPerWorker: %d`,
+		s.TargetTotalConcurrentThings,
+		s.MessagesToGeneratePerClient,
+		s.SecondsBetweenEachEvent,
+		s.SecondsBetweenMessages,
+		s.ClientsPerWorker,
+	)
+}
+
 type SnsEventEngine struct {
 	SnsEventEngineConfig
 }
@@ -47,9 +62,9 @@ func (e *SnsEventEngine) GenerateEvents() (int, error) {
 		simRequest := &SimulationRequest{
 			ClientId:               clientId,
 			ClientCount:            clientsPerWorker,
-			StartClientNumber: clientId * clientsPerWorker,
+			StartClientNumber:      clientId * clientsPerWorker,
 			SecondsBetweenMessages: e.SecondsBetweenMessages,
-			MessagesPerClient: e.MessagesToGeneratePerClient,
+			MessagesPerClient:      e.MessagesToGeneratePerClient,
 		}
 
 		messagePayload, err := json.Marshal(simRequest)

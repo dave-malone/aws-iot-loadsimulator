@@ -28,6 +28,8 @@ func main() {
 }
 
 func requestHandler(ctx context.Context, snsEvent events.SNSEvent) (string, error) {
+	log.Printf("Received SNS Event: %v\n", snsEvent)
+
 	if len(snsEvent.Records) != 1 {
 		return "", fmt.Errorf("snsEvent.Records expected to be exactly 1. Length was %d", len(snsEvent.Records))
 	}

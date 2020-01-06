@@ -16,6 +16,21 @@ type SimulationRequest struct {
 	ClientId               int `json:"client-id"`
 }
 
+func (s SimulationRequest) String() string {
+	return fmt.Sprintf(`SimulationRequest
+		StartClientNumber: %d
+		ClientCount: %d
+		MessagesPerClient: %d
+		SecondsBetweenMessages: %d
+		ClientId: %d`,
+		s.StartClientNumber,
+		s.ClientCount,
+		s.MessagesPerClient,
+		s.SecondsBetweenMessages,
+		s.ClientId,
+	)
+}
+
 func ConcurrentWorkerExecutor(totalWorkers int, maxExecutionsPerSecond time.Duration, fn workerFunc) time.Duration {
 	var wg sync.WaitGroup
 	wg.Add(totalWorkers)
