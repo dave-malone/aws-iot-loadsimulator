@@ -81,6 +81,7 @@ Really Want for demo:
 * "Injectable" message payload
 * Externalize configuration in cmd/cli/lambda/worker/main.go
 * Aaron's work to measure p99s, analyze performance data in Athena
+* Figure out why the Paho MQTT client returns nondescript error message when being throttled
 
 
 Nice to haves:
