@@ -39,6 +39,12 @@ type SnsEventEngine struct {
 	SnsEventEngineConfig
 }
 
+func NewSnsEventEngine(config *SnsEventEngineConfig) *SnsEventEngine {
+	return &SnsEventEngine{
+		SnsEventEngineConfig: *config,
+	}
+}
+
 func (e *SnsEventEngine) GenerateEvents() (int, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(e.AwsRegion),
@@ -50,26 +56,26 @@ func (e *SnsEventEngine) GenerateEvents() (int, error) {
 
 	client := sns.New(sess)
 
-	targetTotalConcurrentThings := e.TargetTotalConcurrentThings
-	clientsPerWorker := e.ClientsPerWorker
-	totalWorkers := targetTotalConcurrentThings / clientsPerWorker
+	totalWorkers := e.TargetTotalConcurrentThings / e.ClientsPerWorker
 
-	fmt.Printf("targetTotalConcurrentThings: %d\n", targetTotalConcurrentThings)
-	fmt.Printf("clientsPerWorker: %d\n", clientsPerWorker)
+	fmt.Printf("targetTotalConcurrentThings: %d\n", e.TargetTotalConcurrentThings)
+	fmt.Printf("clientsPerWorker: %d\n", e.ClientsPerWorker)
 	fmt.Printf("totalWorkers: %d\n", totalWorkers)
 
-	executionDuration := ConcurrentWorkerExecutor(totalWorkers, time.Duration(e.SecondsBetweenEachEvent), func(clientId int) error {
+	start := time.Now()
+
+	for clientId := 0; clientId < totalWorkers; clientId++ {
 		simRequest := &SimulationRequest{
 			ClientId:               clientId,
-			ClientCount:            clientsPerWorker,
-			StartClientNumber:      clientId * clientsPerWorker,
+			ClientCount:            e.ClientsPerWorker,
+			StartClientNumber:      clientId * e.ClientsPerWorker,
 			SecondsBetweenMessages: e.SecondsBetweenMessages,
 			MessagesPerClient:      e.MessagesToGeneratePerClient,
 		}
 
 		messagePayload, err := json.Marshal(simRequest)
 		if err != nil {
-			return fmt.Errorf("Failed to marshall simulation request payload: %v", err)
+			return 0, fmt.Errorf("Failed to marshall simulation request payload: %v", err)
 		}
 
 		input := &sns.PublishInput{
@@ -79,21 +85,17 @@ func (e *SnsEventEngine) GenerateEvents() (int, error) {
 
 		result, err := client.Publish(input)
 		if err != nil {
-			return fmt.Errorf("SNS Publish error: %v", err)
+			fmt.Printf("SNS Publish error: %v\n", err)
 		}
 
 		fmt.Printf("Simulation Request: %v\nSNS publish result: %v\n", simRequest, result)
+		sleepTime := time.Duration(e.SecondsBetweenEachEvent) * time.Second
+		fmt.Printf("Sleeping %.f seconds between publishing SNS notifications\n", sleepTime.Seconds())
+		time.Sleep(sleepTime)
+	}
 
-		return nil
-	})
-
+	executionDuration := time.Since(start)
 	fmt.Printf("Simulation Requests generated. Total Execution Time: %v\n", executionDuration)
 
 	return totalWorkers, nil
-}
-
-func NewSnsEventEngine(config *SnsEventEngineConfig) *SnsEventEngine {
-	return &SnsEventEngine{
-		SnsEventEngineConfig: *config,
-	}
 }
