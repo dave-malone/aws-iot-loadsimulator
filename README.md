@@ -8,14 +8,25 @@ Basic architecture:
 
 The source for each of these resides under [cmd/lambda](cmd/lambda).
 
-## Setup
+## Project Dependencies
 
 * Golang 1.12
 * AWS Account
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 * [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
+* [jq](https://stedolan.github.io/jq/download/)
 
 This project uses [Go Modules](https://blog.golang.org/using-go-modules) and is structured according to https://github.com/golang-standards/project-layout
+
+## AWS IoT Resource Initialization
+
+Before working with the simulation tools, you will need to initialize a single AWS IoT Thing. The following script generates everything you'll need to work with this simulator, both locally and deployed to AWS Lambda.
+
+*Note that this script, and all scripts provided in this project, requires all of the prereqs mentioned in the Project Dependencies section above*
+
+```bash
+./scripts/create-iot-thing.sh my-thing-name
+```
 
 
 ## Relevant AWS Limits
@@ -26,7 +37,7 @@ AWS IoT Core | Maximum concurrent client connections per account | 500,000 | Yes
 AWS IoT Core | Connect requests per second per account | 500 | Yes
 AWS IoT Core | Inbound publish requests per second per account | 20,000 | Yes
 AWS IoT Core | Message size | 128 KB | No
-AWS IoT Rules Engine | Inbound publish requests per second per account | 20,000 | ?
+AWS IoT Rules Engine | Inbound publish requests per second per account | 20,000 | Yes
 AWS Lambda | Concurrent executions | 1,000 | Yes
 AWS Lambda | Function timeout | 900 seconds (15 minutes) | No
 AWS Lambda | File descriptors | 1,024 | No
@@ -36,6 +47,7 @@ Amazon SNS | Publish (US East Region) | 30,000 per second | Yes
 * https://docs.aws.amazon.com/iot/latest/developerguide/limits-iot.html
 * https://docs.aws.amazon.com/lambda/latest/dg/limits.html
 * https://docs.aws.amazon.com/general/latest/gr/sns.html#limits_sns
+
 
 ## Local Build & Test with CLI Interfaces
 

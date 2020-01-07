@@ -4,3 +4,4 @@
 build/
 *.log
 scripts/packaged.yml
+scripts/thing-policy.json
