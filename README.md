@@ -18,16 +18,6 @@ The source for each of these resides under [cmd/lambda](cmd/lambda).
 
 This project uses [Go Modules](https://blog.golang.org/using-go-modules) and is structured according to https://github.com/golang-standards/project-layout
 
-## AWS IoT Resource Initialization
-
-Before working with the simulation tools, you will need to initialize a single AWS IoT Thing. The following script generates everything you'll need to work with this simulator, both locally and deployed to AWS Lambda.
-
-*Note that this script, and all scripts provided in this project, requires all of the prereqs mentioned in the Project Dependencies section above*
-
-```bash
-./scripts/create-iot-thing.sh my-thing-name
-```
-
 
 ## Relevant AWS Limits
 
@@ -48,8 +38,17 @@ Amazon SNS | Publish (US East Region) | 30,000 per second | Yes
 * https://docs.aws.amazon.com/lambda/latest/dg/limits.html
 * https://docs.aws.amazon.com/general/latest/gr/sns.html#limits_sns
 
+## AWS IoT Resource Initialization
+
+When building and deploying the project to your AWS account using `./scripts/deploy-sam.sh`, the script will automatically execute this function for you, but if you're running the CLI tools locally, you may need to run this first
+
+```bash
+./scripts/create-iot-thing.sh golang_thing
+```
 
 ## Local Build & Test with CLI Interfaces
+
+Local CLI interfaces were built to allow for testing of the common underlying simulation engine and worker components on your own hardware.
 
 Simulation Engine:
 
@@ -60,10 +59,10 @@ go run cmd/cli/engine/main.go \
 
 Simulation Worker:
 
-
-
 ```bash
+#Obtain the AWS IoT Core Endpoint address
 MQTT_HOST=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | jq -r '.endpointAddress')
+
 go run cmd/cli/worker/main.go \
   -host $MQTT_HOST \
   -max-clients 10 \
@@ -81,9 +80,12 @@ go run cmd/cli/registry/main.go \
 
 ## Deploy Simulator Lambda Functions
 
+One script to rule them all...
+
 ```bash
 ./scripts/deploy-sam.sh
 ```
+
 
 ## Backlog
 

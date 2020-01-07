@@ -13,6 +13,7 @@ then
   aws s3 mb s3://$S3_BUCKET
 fi
 
+./scripts/create-iot-thing.sh golang_thing
 ./scripts/build-engine-lambda.sh
 ./scripts/build-worker-lambda.sh
 
