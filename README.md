@@ -60,10 +60,14 @@ go run cmd/cli/engine/main.go \
 
 Simulation Worker:
 
+
+
 ```bash
+MQTT_HOST=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | jq -r '.endpointAddress')
 go run cmd/cli/worker/main.go \
-  -max-clients 100 \
-  -seconds-between-messages 10 \
+  -host $MQTT_HOST \
+  -max-clients 10 \
+  -seconds-between-sns-messages 10 \
   -total-messages-per-client 5
 ```
 
@@ -91,7 +95,7 @@ Really Want for demo:
 * Demonstrate blue/green deployment change to a Rule
 * Measuring latency across the hops
 * "Injectable" message payload
-* Externalize configuration in cmd/cli/lambda/worker/main.go
+* ~~Externalize configuration in cmd/cli/lambda/worker/main.go~~
 * Aaron's work to measure p99s, analyze performance data in Athena
 * Figure out why the Paho MQTT client returns nondescript error message when being throttled
 

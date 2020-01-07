@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+Parameters:
+  MqttHost:
+    Description: 'Required. The AWS IoT Core MQTT Endpoint Host. i.e. xxxxxxxxxxxx-ats.iot.us-east-1.amazonaws.com'
+    Type: 'String'
 Resources:
   IoTSimulatorNotificationsSNSTopic:
     Type: AWS::SNS::Topic
@@ -75,6 +79,9 @@ Resources:
       Policies: AWSLambdaExecute
       Role: !GetAtt IoTLoadSimulatorWorkerLambdaRole.Arn
       CodeUri: ../build/worker-handler.zip
+      Environment:
+        Variables:
+          MQTT_HOST: !Ref MqttHost
   IoTLoadSimulatorWorkerLambdaSnsNotificationsSubscription:
     Type: AWS::SNS::Subscription
     Properties:

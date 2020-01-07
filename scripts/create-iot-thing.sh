@@ -26,10 +26,10 @@ then
   echo "Creating Keys and Certificate"
   CERTIFICATE_ARN=$(aws iot create-keys-and-certificate \
     --set-as-active \
-    --certificate-pem-outfile "./certs/$THING_NAME.cert.pem" \
-    --public-key-outfile "./certs/$THING_NAME.public.key" \
-    --private-key-outfile "./certs/$THING_NAME.private.key" \
-    | jq -r '.certificateArn') 
+    --certificate-pem-outfile "./certs/golang_thing.cert.pem" \
+    --public-key-outfile "./certs/golang_thing.public.key" \
+    --private-key-outfile "./certs/golang_thing.private.key" \
+    | jq -r '.certificateArn')
 
   sed -e 's/{{account-id}}/'"$ACCOUNT_ID"'/g ; s/{{aws-region}}/'"$AWS_REGION"'/g' \
     ./scripts/thing-policy.template > ./scripts/thing-policy.json
