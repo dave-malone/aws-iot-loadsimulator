@@ -96,7 +96,7 @@ aws cloudformation delete-stack --stack-name aws-iot-loadsimulator
 
 Really Want for demo:
 * ~~Aggregate Log messages in ElasticSearch?~~
-* Add CW Metric Dashboards into CW templates
+* ~~Add CW Metric Dashboards into CW templates~~
 * ~~Build simple UI to kick off device simulation, view device simulation stats~~
 * ~~Could rely on [AWS IoT Lifecycle Events](https://docs.aws.amazon.com/iot/latest/developerguide/life-cycle-events.html) to get fleet online / offline state, but would need to offload to something that can handle atomic update requests - i.e. Redis~~
 * Demonstrate blue/green deployment change to a Rule

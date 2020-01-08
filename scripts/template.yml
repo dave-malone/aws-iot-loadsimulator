@@ -96,3 +96,101 @@ Resources:
       Environment:
         Variables:
           DDB_TABLE_NAME: !Ref IoTLoadSimulationFleetStatusDDBTable
+
+  IoTSimulatorCloudWatchDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: "aws-iot-simulator-dashboard"
+      DashboardBody:
+        Fn::Sub: '{
+          "widgets": [
+              {
+                  "type": "metric",
+                  "x": 0,
+                  "y": 0,
+                  "width": 9,
+                  "height": 6,
+                  "properties": {
+                      "metrics": [
+                          [ "AWS/IoT", "Connect.Success", "Protocol", "MQTT" ],
+                          [ ".", "Connect.ClientError", ".", "." ],
+                          [ ".", "Connect.Success", ".", "HTTP" ]
+                      ],
+                      "view": "singleValue",
+                      "stacked": false,
+                      "region": "us-east-1",
+                      "title": "IoT Protocol",
+                      "stat": "Sum",
+                      "period": 300
+                  }
+              },
+              {
+                  "type": "metric",
+                  "x": 9,
+                  "y": 0,
+                  "width": 12,
+                  "height": 6,
+                  "properties": {
+                      "metrics": [
+                          [ "AWS/IoT", "PublishIn.Success", "Protocol", "MQTT" ]
+                      ],
+                      "view": "timeSeries",
+                      "stacked": false,
+                      "region": "us-east-1",
+                      "stat": "Sum",
+                      "period": 1
+                  }
+              },
+              {
+                  "type": "metric",
+                  "x": 9,
+                  "y": 6,
+                  "width": 6,
+                  "height": 6,
+                  "properties": {
+                      "metrics": [
+                          [ "AWS/IoT", "PublishIn.Throttle", "Protocol", "MQTT" ]
+                      ],
+                      "view": "timeSeries",
+                      "stacked": false,
+                      "region": "us-east-1",
+                      "stat": "Sum",
+                      "period": 300
+                  }
+              },
+              {
+                  "type": "metric",
+                  "x": 0,
+                  "y": 6,
+                  "width": 9,
+                  "height": 6,
+                  "properties": {
+                      "metrics": [
+                          [ "AWS/IoT", "Connect.Throttle", "Protocol", "MQTT" ]
+                      ],
+                      "view": "singleValue",
+                      "stacked": false,
+                      "region": "us-east-1",
+                      "stat": "Sum",
+                      "period": 300
+                  }
+              },
+              {
+                  "type": "metric",
+                  "x": 15,
+                  "y": 6,
+                  "width": 6,
+                  "height": 6,
+                  "properties": {
+                      "metrics": [
+                          [ "AWS/IoT", "PublishIn.ClientError", "Protocol", "MQTT" ]
+                      ],
+                      "view": "timeSeries",
+                      "stacked": false,
+                      "region": "us-east-1",
+                      "period": 300,
+                      "stat": "Sum"
+                  }
+              }
+          ]
+        }'
