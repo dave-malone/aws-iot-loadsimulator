@@ -39,6 +39,9 @@ export default class App extends React.Component {
     let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
     let estimatedDuration = durationPerWorker + (secondsBetweenSnsMessages * (totalWorkers - 1))
 
+    let messagesPerSecond = mqttMessageTotal / estimatedDuration
+    messagesPerSecond = Math.ceil(messagesPerSecond)
+
     return (
       <div>
         <form onSubmit={this.handleSubmit}>
@@ -68,6 +71,7 @@ export default class App extends React.Component {
           <li>Total number of iot-simulation-worker Lambda functions: {totalWorkers.toLocaleString()}</li>
           <li>Total number of concurrent MQTT clients: {Number(totalThings).toLocaleString()}</li>
           <li>Total number of MQTT messages: {mqttMessageTotal.toLocaleString()}</li>
+          <li>Estimated MQTT messages per second: {messagesPerSecond.toLocaleString()}</li>
           <li>iot-simulation-worker Lambda function duration: {durationPerWorker.toLocaleString()} seconds</li>
           <li>Estimated, end-to-end Duration of simulation: {estimatedDuration.toLocaleString()} seconds</li>
         </ul>
