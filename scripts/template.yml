@@ -9,51 +9,38 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: "iot-simulator-notifications"
-  IoTLoadSimulatorEngineLambdaRole:
-    Type: AWS::IAM::Role
+
+  IoTLoadSimulationFleetStatusDDBTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      RoleName: "iot-simulator-engine-lambda-role"
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action:
-            - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
-        Version: 2012-10-17
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  IoTLoadSimulatorWorkerLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: "iot-simulator-worker-lambda-role"
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action:
-            - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-              - lambda.amazonaws.com
-        Version: 2012-10-17
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  AllowSNSPublishPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: "allow-sns-publish-iot-simulator-notifications"
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: "Allow"
-            Action:
-              - "sns:Publish"
-            Resource: !Ref IoTSimulatorNotificationsSNSTopic
-      Roles:
+      TableName: "iot-simulator-fleet-status"
+      AttributeDefinitions:
         -
-          Ref: "IoTLoadSimulatorEngineLambdaRole"
+          AttributeName: "clientId"
+          AttributeType: "S"
+        -
+          AttributeName: "deviceStatus"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "clientId"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "deviceStatus-index"
+          KeySchema:
+            -
+              AttributeName: "deviceStatus"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "5"
+            WriteCapacityUnits: "5"
+
   IoTLoadSimulatorEngineLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -62,12 +49,14 @@ Resources:
       Runtime: go1.x
       MemorySize: 256
       Timeout: 900
-      Policies: AWSLambdaExecute
-      Role: !GetAtt IoTLoadSimulatorEngineLambdaRole.Arn
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt IoTSimulatorNotificationsSNSTopic.TopicName
       CodeUri: ../build/engine-handler.zip
       Environment:
         Variables:
           SNS_TOPIC_ARN: !Ref IoTSimulatorNotificationsSNSTopic
+
   IoTLoadSimulatorWorkerLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -76,22 +65,34 @@ Resources:
       Runtime: go1.x
       MemorySize: 2048
       Timeout: 900
-      Policies: AWSLambdaExecute
-      Role: !GetAtt IoTLoadSimulatorWorkerLambdaRole.Arn
+      Events:
+        IoTSimulationRequestEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref IoTSimulatorNotificationsSNSTopic
       CodeUri: ../build/worker-handler.zip
       Environment:
         Variables:
           MQTT_HOST: !Ref MqttHost
-  IoTLoadSimulatorWorkerLambdaSnsNotificationsSubscription:
-    Type: AWS::SNS::Subscription
+
+  IoTSimulatorFleetStatusFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      Protocol: lambda
-      Endpoint: !GetAtt IoTLoadSimulatorWorkerLambdaFunction.Arn
-      TopicArn: !Ref IoTSimulatorNotificationsSNSTopic
-  IoTLoadSimulatorWorkerLambdaResourcePolicy:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Principal: "sns.amazonaws.com"
-      Action: "lambda:InvokeFunction"
-      FunctionName:  !Ref IoTLoadSimulatorWorkerLambdaFunction
-      SourceArn: !Ref IoTSimulatorNotificationsSNSTopic
+      FunctionName: "iot-simulator-fleet-status"
+      Handler: "index.handler"
+      Runtime: nodejs10.x
+      MemorySize: 128
+      Timeout: 5
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IoTLoadSimulationFleetStatusDDBTable
+      Events:
+        IoTEventsPresenceRule:
+          Type: IoTRule
+          Properties:
+            AwsIotSqlVersion: '2016-03-23'
+            Sql: "select * FROM '$aws/events/presence/#'"
+      CodeUri: src/node/function/iot-simulator-fleet-status/index.js
+      Environment:
+        Variables:
+          DDB_TABLE_NAME: !Ref IoTLoadSimulationFleetStatusDDBTable

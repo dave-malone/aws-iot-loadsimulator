@@ -86,6 +86,11 @@ One script to rule them all...
 ./scripts/deploy-sam.sh
 ```
 
+## Cleanup
+
+```bash
+aws cloudformation delete-stack --stack-name aws-iot-loadsimulator
+```
 
 ## Backlog
 
