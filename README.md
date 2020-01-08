@@ -105,11 +105,12 @@ Really Want for demo:
 * ~~Externalize configuration in cmd/cli/lambda/worker/main.go~~
 * Aaron's work to measure p99s, analyze performance data in Athena
 * Figure out why the Paho MQTT client returns nondescript error message when being throttled
+* View relevant Service Limits in UI
+* Highlight which service limits will be hit due to simulator inputs 
 
 
 Nice to haves:
 * Embed CW Metrics dashboard in UI?
-* View relevant Service Limits in UI?
 * Anything interesting to show in DD?
 * As part of the demo, can we illustrate the use of Fine-Grained Logging on a select group of things? https://docs.aws.amazon.com/iot/latest/developerguide/cloud-watch-logs.html#configure-logging
 * Multiple message types with their own publishing scheduling
