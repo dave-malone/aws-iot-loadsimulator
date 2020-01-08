@@ -6,3 +6,5 @@ build/
 scripts/packaged.yml
 scripts/thing-policy.json
 *expression-attributes.json
+.idea/
+*.iml
