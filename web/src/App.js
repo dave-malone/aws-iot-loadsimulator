@@ -1,6 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
 
 export default class App extends React.Component {
   constructor(props) {
@@ -73,6 +71,18 @@ export default class App extends React.Component {
           <li>iot-simulation-worker Lambda function duration: {durationPerWorker.toLocaleString()} seconds</li>
           <li>Estimated, end-to-end Duration of simulation: {estimatedDuration.toLocaleString()} seconds</li>
         </ul>
+        <p>
+          <i>** PLEASE NOTE ** since the maximum execution duration of Lambda today is 15 minutes, the maximum number of MQTT
+          messages that can possibly be generated per iot-simulation-worker Lambda is based on the following formula:</i>
+
+          <div>
+            <code>
+              let durationPerWorker = messagesPerThing * secondsBetweenMqttMessages<br />
+              durationPerWorker = durationPerWorker &lt;= 900 ? durationPerWorker : 900<br />
+              let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
+            </code>
+          </div>
+        </p>
       </div>
     );
   }
