@@ -1,6 +1,10 @@
-rm -f build/worker-handler*
+#!/usr/bin/env bash
+set -x
+PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 
-GOOS=linux go build -o ./build/worker-handler ./cmd/lambda/worker/main.go
-pushd build
-zip worker-handler.zip worker-handler ../certs/*
-popd
+rm -f "${PROJECT_DIR}"/build/worker-handler*
+
+GOOS=linux go build -o "${PROJECT_DIR}"/build/worker-handler "${PROJECT_DIR}"/cmd/lambda/worker/main.go
+pushd "${PROJECT_DIR}"/build || exit 128
+zip worker-handler.zip worker-handler "${PROJECT_DIR}"/certs/*
+popd || exit 128
