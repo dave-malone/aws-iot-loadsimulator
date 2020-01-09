@@ -92,7 +92,7 @@ Resources:
           Properties:
             AwsIotSqlVersion: '2016-03-23'
             Sql: "select * FROM '$aws/events/presence/#'"
-      CodeUri: src/node/function/iot-simulator-fleet-status/index.js
+      CodeUri: ../src/node/function/iot-simulator-fleet-status/index.js
       Environment:
         Variables:
           DDB_TABLE_NAME: !Ref IoTLoadSimulationFleetStatusDDBTable
@@ -103,94 +103,137 @@ Resources:
       DashboardName: "aws-iot-simulator-dashboard"
       DashboardBody:
         Fn::Sub: '{
-          "widgets": [
-              {
-                  "type": "metric",
-                  "x": 0,
-                  "y": 0,
-                  "width": 9,
-                  "height": 6,
-                  "properties": {
-                      "metrics": [
-                          [ "AWS/IoT", "Connect.Success", "Protocol", "MQTT" ],
-                          [ ".", "Connect.ClientError", ".", "." ],
-                          [ ".", "Connect.Success", ".", "HTTP" ]
-                      ],
-                      "view": "singleValue",
-                      "stacked": false,
-                      "region": "us-east-1",
-                      "title": "IoT Protocol",
-                      "stat": "Sum",
-                      "period": 300
-                  }
-              },
-              {
-                  "type": "metric",
-                  "x": 9,
-                  "y": 0,
-                  "width": 12,
-                  "height": 6,
-                  "properties": {
-                      "metrics": [
-                          [ "AWS/IoT", "PublishIn.Success", "Protocol", "MQTT" ]
-                      ],
-                      "view": "timeSeries",
-                      "stacked": false,
-                      "region": "us-east-1",
-                      "stat": "Sum",
-                      "period": 1
-                  }
-              },
-              {
-                  "type": "metric",
-                  "x": 9,
-                  "y": 6,
-                  "width": 6,
-                  "height": 6,
-                  "properties": {
-                      "metrics": [
-                          [ "AWS/IoT", "PublishIn.Throttle", "Protocol", "MQTT" ]
-                      ],
-                      "view": "timeSeries",
-                      "stacked": false,
-                      "region": "us-east-1",
-                      "stat": "Sum",
-                      "period": 300
-                  }
-              },
-              {
-                  "type": "metric",
-                  "x": 0,
-                  "y": 6,
-                  "width": 9,
-                  "height": 6,
-                  "properties": {
-                      "metrics": [
-                          [ "AWS/IoT", "Connect.Throttle", "Protocol", "MQTT" ]
-                      ],
-                      "view": "singleValue",
-                      "stacked": false,
-                      "region": "us-east-1",
-                      "stat": "Sum",
-                      "period": 300
-                  }
-              },
-              {
-                  "type": "metric",
-                  "x": 15,
-                  "y": 6,
-                  "width": 6,
-                  "height": 6,
-                  "properties": {
-                      "metrics": [
-                          [ "AWS/IoT", "PublishIn.ClientError", "Protocol", "MQTT" ]
-                      ],
-                      "view": "timeSeries",
-                      "stacked": false,
-                      "region": "us-east-1",
-                      "period": 300,
-                      "stat": "Sum"
-                  }
-              }
-          ]
+           "widgets": [
+               {
+                   "type": "metric",
+                   "x": 12,
+                   "y": 0,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/IoT", "Connect.Success", "Protocol", "MQTT", { "stat": "Sum", "period": 3600 } ],
+                           [ ".", "Connect.ServerError", ".", ".", { "stat": "Sum", "period": 3600 } ],
+                           [ ".", "Connect.ClientError", ".", ".", { "stat": "Sum", "period": 3600 } ],
+                           [ ".", "Connect.Throttle", ".", ".", { "stat": "Sum", "period": 3600 } ]
+                       ],
+                       "view": "singleValue",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "title": "IoT Protocol",
+                       "period": 300
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 6,
+                   "y": 0,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/IoT", "Connect.Success", "Protocol", "MQTT", { "stat": "Sum", "period": 300 } ],
+                           [ ".", "Connect.ServerError", ".", ".", { "stat": "Sum", "period": 1 } ],
+                           [ ".", "Connect.ClientError", ".", ".", { "stat": "Sum", "period": 1 } ],
+                           [ ".", "Connect.Throttle", ".", ".", { "stat": "Sum", "period": 1 } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "title": "IoT Protocol",
+                       "period": 300
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 6,
+                   "y": 6,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/IoT", "PublishIn.Success", "Protocol", "MQTT", { "stat": "Sum", "period": 1 } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1"
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 6,
+                   "y": 12,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/IoT", "TopicMatch", "RuleName", "demo_rule_sqs", { "stat": "SampleCount", "period": 1, "id": "m2" } ],
+                           [ "...", "cr_iot_project_processing_rule_kin", { "stat": "SampleCount", "period": 1, "id": "m1" } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "title": "IoT Rules",
+                       "period": 300
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 0,
+                   "y": 0,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/Lambda", "Errors", "FunctionName", "iot-simulator-engine", { "period": 1, "stat": "Sum" } ],
+                           [ ".", "Invocations", ".", ".", { "period": 1, "stat": "Sum" } ],
+                           [ ".", "Throttles", ".", ".", { "period": 1, "stat": "Sum" } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "title": "Lambda Engine",
+                       "period": 300
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 0,
+                   "y": 6,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/Lambda", "Errors", "FunctionName", "iot-simulator-worker", { "period": 1, "stat": "Sum" } ],
+                           [ ".", "Invocations", ".", ".", { "period": 1, "stat": "Sum" } ],
+                           [ ".", "Throttles", ".", ".", { "period": 1, "stat": "Sum" } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "title": "Lambda Worker",
+                       "period": 300
+                   }
+               },
+               {
+                   "type": "metric",
+                   "x": 0,
+                   "y": 12,
+                   "width": 6,
+                   "height": 6,
+                   "properties": {
+                       "metrics": [
+                           [ "AWS/Lambda", "ConcurrentExecutions", { "period": 1, "stat": "Maximum" } ],
+                           [ ".", "Invocations", { "period": 1, "stat": "Sum" } ],
+                           [ ".", "Throttles", { "period": 1, "stat": "Sum" } ]
+                       ],
+                       "view": "timeSeries",
+                       "stacked": false,
+                       "region": "us-east-1",
+                       "start": "-PT30M",
+                       "end": "P0D",
+                       "title": "Total Lambda"
+                   }
+               }
+           ]
         }'
