@@ -115,6 +115,7 @@ export default class App extends React.Component {
     setValue("messagesPerSecond", messagesPerSecond, (messagesPerSecond > 20000))
     setValue("totalThings", totalThings, (totalThings > 500000))
     setValue("secondsBetweenSnsMessages", secondsBetweenSnsMessages)
+    setValue("durationPerWorker", durationPerWorker)
 
     return resourceUsageEstimate
   }
