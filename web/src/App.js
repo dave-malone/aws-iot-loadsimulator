@@ -36,6 +36,7 @@ const resourceUsageEstimateRef = [
   { key: "messagesPerSecond", associatedServiceLimit: serviceLimitsRef[2], label: "MQTT Messages / Second", value: 0},
   { key: "durationPerWorker", associatedServiceLimit: null, label: "Worker function duration (seconds)", value: 0},
   { key: "estimatedDuration", associatedServiceLimit: null, label: "End-to-end simulation duration (seconds)", value: 0},
+  { key: "connectionRequestsPerSecond", associatedServiceLimit: serviceLimitsRef[1], label: "Connection Requests Per Second", value: 0},
 ]
 
 export default class App extends React.Component {
@@ -105,6 +106,9 @@ export default class App extends React.Component {
     let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
     let estimatedDuration = durationPerWorker + (secondsBetweenSnsMessages * (totalWorkers - 1))
     let messagesPerSecond = Math.ceil(mqttMessageTotal / estimatedDuration)
+    //TODO - this value has some bearing based on the secondsBetweenSnsMessages value, which isn't adjustable at the moment;
+    //but once it's a variable we can play with, adjust this calculation as it correlates to that value 
+    let connectionRequestsPerSecond = clientsPerWorker
 
     setValue("totalWorkers", totalWorkers, (totalWorkers > 1000))
     setValue("totalSnsMessages", totalWorkers)
@@ -116,6 +120,7 @@ export default class App extends React.Component {
     setValue("totalThings", totalThings, (totalThings > 500000))
     setValue("secondsBetweenSnsMessages", secondsBetweenSnsMessages)
     setValue("durationPerWorker", durationPerWorker)
+    setValue("connectionRequestsPerSecond", connectionRequestsPerSecond, (connectionRequestsPerSecond > 500))
 
     return resourceUsageEstimate
   }

@@ -12,7 +12,7 @@ import Paper from '@material-ui/core/Paper'
 export default class ResourceUsageEstimator extends React.Component {
   render() {
     let { resourceUsageEstimate } = this.props
-    
+
     // console.log(`resourceUsageEstimate: ${JSON.stringify(resourceUsageEstimate)}`)
     return (
       <Card>
@@ -23,7 +23,7 @@ export default class ResourceUsageEstimator extends React.Component {
               <TableBody>
                 {resourceUsageEstimate.map((row, i) => (
                   <TableRow key={i} style={{backgroundColor: row.associatedServiceLimit ? (row.associatedServiceLimit.highlight ? 'yellow' : '') : ''}}>
-                    <TableCell component="th" scope="row">{row.label}</TableCell>
+                    <TableCell>{row.label}</TableCell>
                     <TableCell>{row.value.toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
