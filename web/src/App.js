@@ -10,7 +10,7 @@ const serviceLimitsRef = [
   {id: 2, highlight: false, service: 'AWS IoT Core', limit: '20,000', adjustable: 'Yes', resource: 'Inbound publish requests per second per account'},
   {id: 3, highlight: false, service: 'AWS IoT Core', limit: '128 KB', adjustable: 'No', resource: 'Message Size'},
   {id: 4, highlight: false, service: 'AWS IoT Rules Engine', limit: '20,000', adjustable: 'Yes', resource: 'Inbound publish requests per second per account'},
-  {id: 5, highlight: false, service: 'AWS Lambda', limit: '1000', adjustable: 'Yes', resource: 'Concurrent executions'},
+  {id: 5, highlight: false, service: 'AWS Lambda', limit: '1,000', adjustable: 'Yes', resource: 'Concurrent executions'},
   {id: 6, highlight: false, service: 'AWS Lambda', limit: '900 seconds (15 minutes)', adjustable: 'No', resource: 'Function timeout'},
   {id: 7, highlight: false, service: 'AWS Lambda', limit: '1,024', adjustable: 'No', resource: 'File descriptors'},
   {id: 8, highlight: false, service: 'AWS Lambda', limit: '1,024', adjustable: 'No', resource: 'Execution processes/threads'},
@@ -100,7 +100,6 @@ export default class App extends React.Component {
     }
 
     let totalWorkers = Math.ceil(totalThings / clientsPerWorker)
-    let totalSnsMessages = totalWorkers
     let totalRampTime = secondsBetweenSnsMessages * totalWorkers
     let messagesPerThing = durationPerWorker / secondsBetweenMqttMessages
     let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
@@ -108,13 +107,14 @@ export default class App extends React.Component {
     let messagesPerSecond = Math.ceil(mqttMessageTotal / estimatedDuration)
 
     setValue("totalWorkers", totalWorkers, (totalWorkers > 1000))
-    setValue("totalSnsMessages", totalSnsMessages)
+    setValue("totalSnsMessages", totalWorkers)
     setValue("totalRampTime", totalRampTime)
     setValue("messagesPerThing", messagesPerThing)
     setValue("mqttMessageTotal", mqttMessageTotal)
     setValue("estimatedDuration", estimatedDuration)
     setValue("messagesPerSecond", messagesPerSecond, (messagesPerSecond > 20000))
     setValue("totalThings", totalThings, (totalThings > 500000))
+    setValue("secondsBetweenSnsMessages", secondsBetweenSnsMessages)
 
     return resourceUsageEstimate
   }
