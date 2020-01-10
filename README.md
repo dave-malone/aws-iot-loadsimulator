@@ -14,7 +14,6 @@ The source for each of these resides under [cmd/lambda](cmd/lambda).
 * AWS Account
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 * [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
-* [jq](https://stedolan.github.io/jq/download/)
 
 This project uses [Go Modules](https://blog.golang.org/using-go-modules) and is structured according to https://github.com/golang-standards/project-layout
 
@@ -61,7 +60,7 @@ Simulation Worker:
 
 ```bash
 #Obtain the AWS IoT Core Endpoint address
-MQTT_HOST=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | jq -r '.endpointAddress')
+MQTT_HOST=$(aws --output text iot describe-endpoint --endpoint-type iot:Data-ATS --query 'endpointAddress')
 
 go run cmd/cli/worker/main.go \
   -host $MQTT_HOST \
