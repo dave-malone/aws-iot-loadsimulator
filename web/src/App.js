@@ -1,93 +1,146 @@
-import React from 'react';
+import React from 'react'
+import Grid from '@material-ui/core/Grid'
+import ResourceUsageEstimator from './ResourceUsageEstimator'
+import SimulationRequestForm from './SimulationRequestForm'
+import AwsServiceLimitsTable from './AwsServiceLimitsTable'
+
+const serviceLimitsRef = [
+  {id: 0, highlight: false, service: 'AWS IoT Core', limit: '500,000', adjustable: 'Yes', resource: 'Maximum concurrent client connections per account'},
+  {id: 1, highlight: false, service: 'AWS IoT Core', limit: '500', adjustable: 'Yes', resource: 'Connect requests per second per account'},
+  {id: 2, highlight: false, service: 'AWS IoT Core', limit: '20,000', adjustable: 'Yes', resource: 'Inbound publish requests per second per account'},
+  {id: 3, highlight: false, service: 'AWS IoT Core', limit: '128 KB', adjustable: 'No', resource: 'Message Size'},
+  {id: 4, highlight: false, service: 'AWS IoT Rules Engine', limit: '20,000', adjustable: 'Yes', resource: 'Inbound publish requests per second per account'},
+  {id: 5, highlight: false, service: 'AWS Lambda', limit: '1000', adjustable: 'Yes', resource: 'Concurrent executions'},
+  {id: 6, highlight: false, service: 'AWS Lambda', limit: '900 seconds (15 minutes)', adjustable: 'No', resource: 'Function timeout'},
+  {id: 7, highlight: false, service: 'AWS Lambda', limit: '1,024', adjustable: 'No', resource: 'File descriptors'},
+  {id: 8, highlight: false, service: 'AWS Lambda', limit: '1,024', adjustable: 'No', resource: 'Execution processes/threads'},
+  {id: 9, highlight: false, service: 'Amazon SNS', limit: '30,000 / second', adjustable: 'Yes', resource: 'Publish (US East Region)'}
+]
+
+const controlsRef = {
+  totalThings: 1000,
+  durationPerWorker: 900,
+  secondsBetweenMqttMessages: 5,
+  clientsPerWorker: 500,
+  secondsBetweenSnsMessages: 5,
+}
+
+const resourceUsageEstimateRef = [
+  { key: "totalSnsMessages", associatedServiceLimit: serviceLimitsRef[9], label: "SNS Messages", value: 0},
+  { key: "totalWorkers", associatedServiceLimit: serviceLimitsRef[5], label: "Worker functions", value: 0},
+  { key: "secondsBetweenSnsMessages", associatedServiceLimit: null, label: "Seconds between SNS messages (ramp time)", value: 0},
+  { key: "totalRampTime", associatedServiceLimit: null, label: "Total Ramp time (seconds)", value: 0},
+  { key: "totalThings", associatedServiceLimit: serviceLimitsRef[0], label: "Simulated Things", value: 0},
+  { key: "messagesPerThing", associatedServiceLimit: null, label: "Messages Per Thing", value: 0},
+  { key: "mqttMessageTotal", associatedServiceLimit: null, label: "Total MQTT Messages", value: 0},
+  { key: "messagesPerSecond", associatedServiceLimit: serviceLimitsRef[2], label: "MQTT Messages / Second", value: 0},
+  { key: "durationPerWorker", associatedServiceLimit: null, label: "Worker function duration (seconds)", value: 0},
+  { key: "estimatedDuration", associatedServiceLimit: null, label: "End-to-end simulation duration (seconds)", value: 0},
+]
 
 export default class App extends React.Component {
   constructor(props) {
-    super(props);
-    this.state = {
-      totalThings: 10,
-      messagesPerThing: 10,
-      secondsBetweenMqttMessages: 10,
-      clientsPerWorker: 1000,
-      secondsBetweenSnsMessages: 5
-    };
+    super(props)
 
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this.state = {
+      controls: Object.assign({}, controlsRef),
+      resourceUsageEstimate: [...resourceUsageEstimateRef],
+      serviceLimits: [...serviceLimitsRef],
+    }
+
+    this.handleChange = this.handleChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.computeEstimates = this.computeEstimates.bind(this)
+  }
+
+  componentDidMount(){
+    this.handleChange({target:{name:'', value:''}})
   }
 
   handleChange(event) {
-    this.setState({[event.target.name]: event.target.value});
-    console.log(JSON.stringify(this.state))
+    // console.log(`form input change event for target ${event.target.name} = ${event.target.value}`)
+
+    let updatedControls = Object.assign({},{...this.state.controls}, { [event.target.name]: Number(event.target.value) })
+    let updatedResourceUsageEstimate = this.computeEstimates(updatedControls)
+
+    this.setState({resourceUsageEstimate: updatedResourceUsageEstimate, controls: updatedControls})
+    // console.log(JSON.stringify(this.state))
   }
 
   handleSubmit(event) {
-    alert('A name was submitted: ' + this.state.value);
-    event.preventDefault();
+    console.log('Submitting simulation request')
+    event.preventDefault()
+  }
+
+  computeEstimates(controls){
+    console.log(`computing estimates using controls ${JSON.stringify(controls)}`)
+
+    let {
+      totalThings,
+      durationPerWorker,
+      clientsPerWorker,
+      secondsBetweenMqttMessages,
+      secondsBetweenSnsMessages
+    } = controls
+
+    let resourceUsageEstimate = [...resourceUsageEstimateRef]
+
+    const findByKey = (key) => {
+      let element = resourceUsageEstimate.find( element => element.key === key)
+      return element
+    }
+
+    const setValue = (key, value, highlightAssociatedServiceLimit) => {
+      let element = findByKey(key)
+      element.value = value
+
+      if(element.associatedServiceLimit){
+        element.associatedServiceLimit.highlight = highlightAssociatedServiceLimit
+      }
+    }
+
+    let totalWorkers = Math.ceil(totalThings / clientsPerWorker)
+    let totalSnsMessages = totalWorkers
+    let totalRampTime = secondsBetweenSnsMessages * totalWorkers
+    let messagesPerThing = durationPerWorker / secondsBetweenMqttMessages
+    let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
+    let estimatedDuration = durationPerWorker + (secondsBetweenSnsMessages * (totalWorkers - 1))
+    let messagesPerSecond = Math.ceil(mqttMessageTotal / estimatedDuration)
+
+    setValue("totalWorkers", totalWorkers, (totalWorkers > 1000))
+    setValue("totalSnsMessages", totalSnsMessages)
+    setValue("totalRampTime", totalRampTime)
+    setValue("messagesPerThing", messagesPerThing)
+    setValue("mqttMessageTotal", mqttMessageTotal)
+    setValue("estimatedDuration", estimatedDuration)
+    setValue("messagesPerSecond", messagesPerSecond, (messagesPerSecond > 20000))
+    setValue("totalThings", totalThings, (totalThings > 500000))
+
+    return resourceUsageEstimate
   }
 
   render() {
-    let { totalThings, clientsPerWorker, messagesPerThing, secondsBetweenSnsMessages, secondsBetweenMqttMessages} = this.state
-
-    let totalWorkers = totalThings / clientsPerWorker
-    totalWorkers = totalWorkers < 1 ? 1 : totalWorkers
-
-    let totalRampTime = secondsBetweenSnsMessages * totalWorkers
-
-    let durationPerWorker = messagesPerThing * secondsBetweenMqttMessages
-    durationPerWorker = durationPerWorker <= 900 ? durationPerWorker : 900
-
-    let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
-    let estimatedDuration = durationPerWorker + (secondsBetweenSnsMessages * (totalWorkers - 1))
-
-    let messagesPerSecond = mqttMessageTotal / estimatedDuration
-    messagesPerSecond = Math.ceil(messagesPerSecond)
-
     return (
-      <div>
-        <form onSubmit={this.handleSubmit}>
-          <label>
-            <input type="number" name="totalThings" value={totalThings} onChange={this.handleChange} />
-            Total number of Simulated Things
-          </label>
-          <br />
-          <label>
-            <input type="number" name="messagesPerThing" value={messagesPerThing} onChange={this.handleChange} />
-            Quantity of MQTT Messages to publish per Thing
-          </label>
-          <br />
-          <label>
-            <input type="number" name="secondsBetweenMqttMessages" value={secondsBetweenMqttMessages} onChange={this.handleChange} />
-            Seconds between MQTT messages to be published per Thing
-          </label>
-          <br />
-          <input type="submit" value="Begin Simulation" />
-        </form>
-
-        <h2>Simulation Engine Resource Estimates:</h2>
-        <ul>
-          <li>Total number of SNS messages: {totalWorkers.toLocaleString()}</li>
-          <li>Seconds between SNS messages (ramp time): {secondsBetweenSnsMessages}</li>
-          <li>Total ramp time: {totalRampTime} seconds</li>
-          <li>Total number of iot-simulation-worker Lambda functions: {totalWorkers.toLocaleString()}</li>
-          <li>Total number of concurrent MQTT clients: {Number(totalThings).toLocaleString()}</li>
-          <li>Total number of MQTT messages: {mqttMessageTotal.toLocaleString()}</li>
-          <li>Estimated MQTT messages per second: {messagesPerSecond.toLocaleString()}</li>
-          <li>iot-simulation-worker Lambda function duration: {durationPerWorker.toLocaleString()} seconds</li>
-          <li>Estimated, end-to-end Duration of simulation: {estimatedDuration.toLocaleString()} seconds</li>
-        </ul>
-        <p>
-          <i>** PLEASE NOTE ** since the maximum execution duration of Lambda today is 15 minutes, the maximum number of MQTT
-          messages that can possibly be generated per iot-simulation-worker Lambda is based on the following formula:</i>
-
-          <div>
-            <code>
-              let durationPerWorker = messagesPerThing * secondsBetweenMqttMessages<br />
-              durationPerWorker = durationPerWorker &lt;= 900 ? durationPerWorker : 900<br />
-              let mqttMessageTotal = (durationPerWorker / secondsBetweenMqttMessages) * totalThings
-            </code>
-          </div>
-        </p>
-      </div>
-    );
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Grid container justify="center">
+            <SimulationRequestForm
+              controls={this.state.controls}
+              onChangeHandler={this.handleChange}
+              onSubmitHandler={this.handleSubmit} />
+          </Grid>
+        </Grid>
+        <Grid item xs={12}>
+          <Grid container justify="center" direction="row" wrap="nowrap">
+            <Grid item xs={5}>
+              <ResourceUsageEstimator resourceUsageEstimate={this.state.resourceUsageEstimate} />
+            </Grid>
+            <Grid item>
+              <AwsServiceLimitsTable serviceLimits={this.state.serviceLimits} />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    )
   }
 }

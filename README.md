@@ -105,8 +105,8 @@ Really Want for demo:
 * ~~Externalize configuration in cmd/cli/lambda/worker/main.go~~
 * Aaron's work to measure p99s, analyze performance data in Athena
 * Figure out why the Paho MQTT client returns nondescript error message when being throttled
-* View relevant Service Limits in UI
-* Highlight which service limits will be hit due to simulator inputs 
+* ~~View relevant Service Limits in UI~~
+* ~~Highlight which service limits will be hit due to simulator inputs~~
 
 
 Nice to haves:
@@ -119,4 +119,5 @@ Lessons Learned:
 * Can't use fleet indexing metrics without things being registered in the device registry
 * Current issue with populating device registry is the max rate at which we can call CreateThing (default 15 TPS); this makes populating the device registry for large scale simulations potentially lengthy (100,000 items created using CreateThing at that rate would take about 1.85 hours to complete).
 * Aaron's story about using ECS instead (also add some points to the presentation)
+* Device Defender limits
 * Lambda limits in total across the AWS account
