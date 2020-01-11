@@ -1,0 +1,842 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template for mock SQS-based IoT architecture",
+  "Parameters": {
+    "Project": {
+      "Type": "String",
+      "Default": "aws-iot-loadsimulator-mockbackend",
+      "Description": "name of project stack"
+    },
+    "CodeBucketName": {
+      "Type": "String",
+      "Default": "aws-iot-loadsimulator-mockbackend",
+      "Description": "infrastructure bucket"
+    },
+    "Username": {
+      "Type": "String",
+      "Default": "username",
+      "Description": "Name of RDS user.",
+      "MinLength": 1,
+      "MaxLength": 16,
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription": "Name must begin with a letter and contain 1-16 alphanumeric characters"
+    },
+    "Password": {
+      "NoEcho": "true",
+      "Type": "String",
+      "Description": "Password for RDS user.",
+      "MinLength": 8,
+      "MaxLength": 41,
+      "AllowedPattern": "[a-zA-Z0-9]*",
+      "ConstraintDescription": "Password must contain 8-41 alphanumeric characters"
+    },
+    "DatabaseName": {
+      "Type": "String",
+      "Default": "iotdb",
+      "Description": "Name of RDS database.",
+      "MinLength": 1,
+      "MaxLength": 64,
+      "ConstraintDescription": "Database name must contain 1-64 characters"
+    },
+    "SQSTableName": {
+      "Type": "String",
+      "Default": "iotdata",
+      "Description": "Name of table used in database to store data from SQS.",
+      "MinLength": 1,
+      "MaxLength": 64,
+      "ConstraintDescription": "Table name must contain 1-64 characters"
+    }
+  },
+  "Resources": {
+    "EnhancedMonitoringRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "monitoring-role"
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "monitoring.rds.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+        ]
+      }
+    },
+    "DatabaseAlarmTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": "Database Alarm Topic"
+      }
+    },
+    "DBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "subnet-group"
+            ]
+          ]
+        },
+        "DBSubnetGroupDescription": "Subnet group for the database",
+        "SubnetIds": {
+          "Fn::Split": [
+            ",",
+            {
+              "Fn::ImportValue": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Project"
+                    },
+                    "public-subnets"
+                  ]
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AuroraCluster": {
+      "Type": "AWS::RDS::DBCluster",
+      "Properties": {
+        "Engine": "aurora-mysql",
+        "MasterUsername": {
+          "Ref": "Username"
+        },
+        "MasterUserPassword": {
+          "Ref": "Password"
+        },
+        "DBSubnetGroupName": {
+          "Ref": "DBSubnetGroup"
+        },
+        "StorageEncrypted": "true",
+        "DatabaseName": {
+          "Ref": "DatabaseName"
+        },
+        "DBClusterParameterGroupName": "default.aurora-mysql5.7",
+        "Port": 3306,
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Project"
+                  },
+                  "sg"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AuroraInstance": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "Engine": "aurora-mysql",
+        "DBClusterIdentifier": {
+          "Ref": "AuroraCluster"
+        },
+        "DBInstanceClass": "db.r5.2xlarge",
+        "DBSubnetGroupName": {
+          "Ref": "DBSubnetGroup"
+        },
+        "DBParameterGroupName": "default.aurora-mysql5.7",
+        "MonitoringInterval": 1,
+        "MonitoringRoleArn": {
+          "Fn::GetAtt": [
+            "EnhancedMonitoringRole",
+            "Arn"
+          ]
+        },
+        "PubliclyAccessible": "true",
+        "CopyTagsToSnapshot": "true",
+        "Tags": [
+          {
+            "Key": "workload-type",
+            "Value": "other"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "DatabaseCpuAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "TreatMissingData": "notBreaching",
+        "Namespace": "AWS/RDS",
+        "MetricName": "CPUUtilization",
+        "Unit": "Percent",
+        "Statistic": "Average",
+        "EvaluationPeriods": 2,
+        "Period": 300,
+        "Threshold": 80,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": {
+              "Ref": "AuroraCluster"
+            }
+          },
+          {
+            "Name": "Role",
+            "Value": "WRITER"
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "DatabaseAlarmTopic"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "DatabaseSelectLatencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "TreatMissingData": "notBreaching",
+        "Namespace": "AWS/RDS",
+        "MetricName": "SelectLatency",
+        "Unit": "Seconds",
+        "Statistic": "Average",
+        "EvaluationPeriods": 2,
+        "Period": 300,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": {
+              "Ref": "AuroraCluster"
+            }
+          },
+          {
+            "Name": "Role",
+            "Value": "WRITER"
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "DatabaseAlarmTopic"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "DatabaseInsertLatencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "TreatMissingData": "notBreaching",
+        "Namespace": "AWS/RDS",
+        "MetricName": "InsertLatency",
+        "Unit": "Seconds",
+        "Statistic": "Average",
+        "EvaluationPeriods": 2,
+        "Period": 300,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": {
+              "Ref": "AuroraCluster"
+            }
+          },
+          {
+            "Name": "Role",
+            "Value": "WRITER"
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "DatabaseAlarmTopic"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "DatabaseUpdateLatencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "TreatMissingData": "notBreaching",
+        "Namespace": "AWS/RDS",
+        "MetricName": "UpdateLatency",
+        "Unit": "Seconds",
+        "Statistic": "Average",
+        "EvaluationPeriods": 2,
+        "Period": 300,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": {
+              "Ref": "AuroraCluster"
+            }
+          },
+          {
+            "Name": "Role",
+            "Value": "WRITER"
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "DatabaseAlarmTopic"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "DatabaseDeleteLatencyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "TreatMissingData": "notBreaching",
+        "Namespace": "AWS/RDS",
+        "MetricName": "DeleteLatency",
+        "Unit": "Seconds",
+        "Statistic": "Average",
+        "EvaluationPeriods": 2,
+        "Period": 300,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBClusterIdentifier",
+            "Value": {
+              "Ref": "AuroraCluster"
+            }
+          },
+          {
+            "Name": "Role",
+            "Value": "WRITER"
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "DatabaseAlarmTopic"
+          }
+        ]
+      },
+      "DependsOn": "AuroraCluster"
+    },
+    "SQSMessageQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "queue"
+            ]
+          ]
+        },
+        "DelaySeconds": 0,
+        "VisibilityTimeout": 30,
+        "KmsMasterKeyId": "alias/aws/sqs"
+      }
+    },
+    "SQSProcessDataLambda": {
+      "DependsOn": "SQSProcessingLambdaRole",
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "processing-lambda-sqs"
+            ]
+          ]
+        },
+        "Handler": "lambda_function.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "SQSProcessingLambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "CodeBucketName"
+          },
+          "S3Key": "sqs_data_processor.zip"
+        },
+        "Runtime": "python3.8",
+        "Timeout": "20",
+        "Environment": {
+          "Variables": {
+            "HOST": {
+              "Fn::GetAtt": [
+                "AuroraInstance",
+                "Endpoint.Address"
+              ]
+            },
+            "USERNAME": {
+              "Ref": "Username"
+            },
+            "PASS": {
+              "Ref": "Password"
+            },
+            "DB_NAME": {
+              "Ref": "DatabaseName"
+            },
+            "TABLE_NAME_SQS": {
+              "Ref": "SQSTableName"
+            }
+          }
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::ImportValue": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Project"
+                    },
+                    "sg"
+                  ]
+                ]
+              }
+            }
+          ],
+          "SubnetIds": {
+            "Fn::Split": [
+              ",",
+              {
+                "Fn::ImportValue": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      {
+                        "Ref": "Project"
+                      },
+                      "private-subnets"
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "SQSProcessDataLambdaTrigger": {
+      "DependsOn": "SQSProcessDataLambda",
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "BatchSize": 10,
+        "Enabled": "true",
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "SQSMessageQueue",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SQSProcessDataLambda",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "SQSProcessingLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "processing-lambda-role-sqs"
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Project"
+                  },
+                  "processing-lambda-role-policy-sqs"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "AWSLambdaVPCAccessExecution",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "SQS0",
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:ChangeMessageVisibility"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SQSMessageQueue",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Sid": "SQS1",
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ListQueues",
+                    "sqs:ListDeadLetterSourceQueues"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "SQSProcessingRuleRole": {
+      "DependsOn": "SQSMessageQueue",
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "processing-rule-role-sqs"
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "iot.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Project"
+                  },
+                  "processing-rule-role-policy-sqs"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "sqs:SendMessage",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SQSMessageQueue",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "SQSIoTRule": {
+      "DependsOn": [
+        "SQSProcessDataLambda",
+        "SQSProcessingRuleRole"
+      ],
+      "Type": "AWS::IoT::TopicRule",
+      "Properties": {
+        "RuleName": {
+          "Fn::Join": [
+            "_",
+            [
+              {
+                "Fn::Join": [
+                  "_",
+                  {
+                    "Fn::Split": [
+                      "-",
+                      {
+                        "Ref": "Project"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "processing_rule_sqs"
+            ]
+          ]
+        },
+        "TopicRulePayload": {
+          "RuleDisabled": "false",
+          "Sql": "SELECT newuuid() as uuid, clientid() as thingid, timestamp() as timestamp, * as payload from 'simulator/#'",
+          "Actions": [
+            {
+              "Sqs": {
+                "QueueUrl": {
+                  "Ref": "SQSMessageQueue"
+                },
+                "RoleArn": {
+                  "Fn::GetAtt": [
+                    "SQSProcessingRuleRole",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "TableSetupLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "table-setup-lambda-role"
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/service-role/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "Project"
+                  },
+                  "table-setup-lambda-role-policy"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "TableSetupLambda": {
+      "DependsOn": "TableSetupLambdaRole",
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "Project"
+              },
+              "table-setup-lambda"
+            ]
+          ]
+        },
+        "Handler": "lambda_function.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "TableSetupLambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "CodeBucketName"
+          },
+          "S3Key": "rds_table_setup.zip"
+        },
+        "Runtime": "python3.8",
+        "Timeout": "20",
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::ImportValue": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    {
+                      "Ref": "Project"
+                    },
+                    "sg"
+                  ]
+                ]
+              }
+            }
+          ],
+          "SubnetIds": {
+            "Fn::Split": [
+              ",",
+              {
+                "Fn::ImportValue": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      {
+                        "Ref": "Project"
+                      },
+                      "private-subnets"
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "TableSetupCallout": {
+      "Type": "Custom::LambdaCallout",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "TableSetupLambda",
+            "Arn"
+          ]
+        },
+        "host": {
+          "Fn::GetAtt": [
+            "AuroraInstance",
+            "Endpoint.Address"
+          ]
+        },
+        "username": {
+          "Ref": "Username"
+        },
+        "password": {
+          "Ref": "Password"
+        },
+        "dbName": {
+          "Ref": "DatabaseName"
+        },
+        "sqsTableName": {
+          "Ref": "SQSTableName"
+        }
+      },
+      "DependsOn": [
+        "AuroraInstance",
+        "TableSetupLambda"
+      ]
+    }
+  }
+}
