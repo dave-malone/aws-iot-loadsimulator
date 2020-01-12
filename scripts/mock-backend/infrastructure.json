@@ -652,7 +652,7 @@
         },
         "TopicRulePayload": {
           "RuleDisabled": "false",
-          "Sql": "SELECT newuuid() as uuid, clientid() as thingid, timestamp() as timestamp, * as payload from 'simulator/#'",
+          "Sql": "SELECT newuuid() as uuid, clientid() as thingid, timestamp() as timestamp, * as payload from 'golang_simulator/#'",
           "Actions": [
             {
               "Sqs": {
