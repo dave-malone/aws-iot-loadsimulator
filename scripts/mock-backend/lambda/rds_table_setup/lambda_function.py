@@ -20,8 +20,8 @@ def create_sql_table(table_name, conn):
     create_table = 'CREATE TABLE IF NOT EXISTS ' + table_name + '(' \
                    'uuid VARCHAR(36) NOT NULL ,' \
                    'thingid VARCHAR(128) NOT NULL,' \
-                   'iot_timestamp BIGINT NOT NULL,' \
-                   'intermediate_timestamp BIGINT NOT NULL,' \
+                   'iot_timestamp TIMESTAMP NOT NULL,' \
+                   'intermediate_timestamp TIMESTAMP NOT NULL,' \
                    'db_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' \
                    'payload JSON NOT NULL,' \
                    'PRIMARY KEY (uuid));'
