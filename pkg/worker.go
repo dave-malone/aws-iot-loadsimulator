@@ -70,6 +70,7 @@ func (w *Worker) publishMessages(clientNumber int, simReq *SimulationRequest) er
 		payload := map[string]interface{}{
 			"message_number": messageNumber,
 			"client_id":      clientID,
+			"timestamp":      time.Now().Format(time.RFC3339),
 		}
 
 		if err := mqttClient.PublishAsJson(payload, topic, 0); err != nil {
