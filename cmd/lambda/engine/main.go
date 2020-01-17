@@ -12,7 +12,8 @@ import (
 )
 
 var commonResponseHeaders = map[string]string{
-	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Origin":  "*",
+	"Access-Control-Allow-Headers": "*",
 }
 
 func main() {

@@ -538,14 +538,15 @@
                             {
                               "Ref": "AWS::Region"
                             },
-                            ":lambda:path/2015-03-31/functions/",
-
+                            ":lambda:path/2015-03-31/functions/arn:aws:lambda:",
                             {
-
-                                "Ref": "functionawsiotsimulatorweb63ad2cf6Arn"
+                              "Ref": "AWS::Region"
                             },
-
-                            "/invocations"
+                            ":",
+                            {
+                              "Ref": "AWS::AccountId"
+                            },
+                            ":function:iot-simulator-engine/invocations"
                           ]
                         ]
                       },
@@ -643,14 +644,15 @@
                           {
                             "Ref": "AWS::Region"
                           },
-                          ":lambda:path/2015-03-31/functions/",
-
+                          ":lambda:path/2015-03-31/functions/arn:aws:lambda:",
                           {
-
-                            "Ref": "functionawsiotsimulatorweb63ad2cf6Arn"
+                            "Ref": "AWS::Region"
                           },
-
-                          "/invocations"
+                          ":",
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          ":function:iot-simulator-engine/invocations"
                         ]
                       ]
                     },
@@ -707,10 +709,7 @@
         "functionawsiotsimulatorweb63ad2cf6Permissioniotsimapi": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
-                "FunctionName":
-                    {
-                        "Ref":  "functionawsiotsimulatorweb63ad2cf6Name"
-                    },
+                "FunctionName": "iot-simulator-engine",
 
                     "Action": "lambda:InvokeFunction",
                 "Principal": "apigateway.amazonaws.com",
