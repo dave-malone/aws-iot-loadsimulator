@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,8 +21,18 @@ func main() {
 	lambda.Start(requestHandler)
 }
 
-func requestHandler(ctx context.Context, config loadsim.SnsEventEngineConfig) (events.APIGatewayProxyResponse, error) {
-	fmt.Printf("Received event: %v\n", config)
+func requestHandler(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	fmt.Printf("Received event: %v\n", event)
+
+	var config loadsim.SnsEventEngineConfig
+
+	if err := json.Unmarshal([]byte(event.Body), &config); err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    commonResponseHeaders,
+			Body:       fmt.Errorf("Failed to unmarshall request body: %v", err).Error(),
+		}, nil
+	}
 
 	snsTopicArn := os.Getenv("SNS_TOPIC_ARN")
 	if len(snsTopicArn) == 0 {
