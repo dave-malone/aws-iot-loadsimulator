@@ -10,3 +10,4 @@ scripts/thing-policy.json
 *.iml
 venv/
 *.zip
+web/amplify/team-provider-info.json
