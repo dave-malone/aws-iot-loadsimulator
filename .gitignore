@@ -8,3 +8,5 @@ scripts/thing-policy.json
 *expression-attributes.json
 .idea/
 *.iml
+venv/
+*.zip
