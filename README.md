@@ -14,6 +14,7 @@ The source for each of these resides under [cmd/lambda](cmd/lambda).
 * AWS Account
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 * [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
+* [Amplify CLI](https://aws-amplify.github.io/docs/cli-toolchain/quickstart#installation)
 
 This project uses [Go Modules](https://blog.golang.org/using-go-modules) and is structured according to https://github.com/golang-standards/project-layout
 
@@ -84,6 +85,17 @@ One script to rule them all...
 ```bash
 ./scripts/deploy-sam.sh
 ```
+
+## Deploy Amplify Project Resources, Run Test UI locally
+
+```bash
+cd web
+amplify init --yes
+amplify pull --yes
+amplify run
+```
+
+After your project is initialized, you will need to use the built-in self-service user registration form to create yourself a user, and then login to run the simulation engine. 
 
 ## Cleanup
 
