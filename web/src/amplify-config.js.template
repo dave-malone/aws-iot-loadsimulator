@@ -1,0 +1,10 @@
+{
+  API: {
+      endpoints: [
+          {
+              name: "iot-simulator-engine",
+              endpoint: "{{iot-simulator-engine-api-endpoint}}",
+          }
+      ]
+  }
+}

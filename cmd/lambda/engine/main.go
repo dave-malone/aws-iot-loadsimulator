@@ -3,22 +3,32 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	loadsim "github.com/dave-malone/aws-iot-loadsimulator/pkg"
 )
+
+var commonResponseHeaders = map[string]string{
+	"Access-Control-Allow-Origin": "*",
+}
 
 func main() {
 	lambda.Start(requestHandler)
 }
 
-func requestHandler(ctx context.Context, config loadsim.SnsEventEngineConfig) (string, error) {
+func requestHandler(ctx context.Context, config loadsim.SnsEventEngineConfig) (events.APIGatewayProxyResponse, error) {
 	fmt.Printf("Received event: %v\n", config)
 
 	snsTopicArn := os.Getenv("SNS_TOPIC_ARN")
 	if len(snsTopicArn) == 0 {
-		return "", fmt.Errorf("Environment variable SNS_TOPIC_ARN not set")
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    commonResponseHeaders,
+			Body:       fmt.Errorf("Environment variable SNS_TOPIC_ARN not set").Error(),
+		}, nil
 	}
 
 	config.AwsRegion = os.Getenv("AWS_REGION")
@@ -49,8 +59,16 @@ func requestHandler(ctx context.Context, config loadsim.SnsEventEngineConfig) (s
 	engine := loadsim.NewSnsEventEngine(&config)
 	notificationCount, err := engine.GenerateEvents()
 	if err != nil {
-		return "", fmt.Errorf("Failed to generate events: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    commonResponseHeaders,
+			Body:       fmt.Errorf("Failed to generate events: %v", err).Error(),
+		}, nil
 	}
 
-	return fmt.Sprintf("%d Simulation requests generated", notificationCount), nil
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Headers:    commonResponseHeaders,
+		Body:       fmt.Sprintf("%d Simulation requests generated", notificationCount),
+	}, nil
 }

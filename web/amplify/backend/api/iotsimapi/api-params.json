@@ -1,0 +1,41 @@
+{
+    "paths": [
+        {
+            "name": "/engine",
+            "lambdaFunction": "awsiotsimulatorweb63ad2cf6",
+            "privacy": {
+                "private": true,
+                "auth": [
+                    "/POST",
+                    "/GET",
+                    "/PUT",
+                    "/PATCH",
+                    "/DELETE"
+                ]
+            }
+        }
+    ],
+    "resourceName": "iotsimapi",
+    "apiName": "iotsimapi",
+    "functionArns": [
+        {
+            "lambdaFunction": "awsiotsimulatorweb63ad2cf6"
+        }
+    ],
+    "privacy": {
+        "auth": 1,
+        "unauth": 0,
+        "authRoleName": "amplify-awsiotsimulatorweb-dev-153146-authRole",
+        "unAuthRoleName": "amplify-awsiotsimulatorweb-dev-153146-unauthRole"
+    },
+    "dependsOn": [
+        {
+            "category": "function",
+            "resourceName": "awsiotsimulatorweb63ad2cf6",
+            "attributes": [
+                "Name",
+                "Arn"
+            ]
+        }
+    ]
+}

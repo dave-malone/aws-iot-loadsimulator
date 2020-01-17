@@ -1,5 +1,31 @@
 {
-	"function": {},
-	"auth": {},
-	"api": {}
+	"function": {
+		"awsiotsimulatorweb63ad2cf6": {
+			"service": "Lambda",
+			"providerPlugin": "awscloudformation",
+			"build": true
+		}
+	},
+	"auth": {
+		"cognitoead7a84f": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation"
+		}
+	},
+	"api": {
+		"iotsimapi": {
+			"service": "API Gateway",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": [
+				{
+					"category": "function",
+					"resourceName": "awsiotsimulatorweb63ad2cf6",
+					"attributes": [
+						"Name",
+						"Arn"
+					]
+				}
+			]
+		}
+	}
 }

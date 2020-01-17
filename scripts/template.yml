@@ -41,6 +41,7 @@ Resources:
             ReadCapacityUnits: "5"
             WriteCapacityUnits: "5"
 
+
   IoTLoadSimulatorEngineLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -92,7 +93,7 @@ Resources:
           Properties:
             AwsIotSqlVersion: '2016-03-23'
             Sql: "select * FROM '$aws/events/presence/#'"
-      CodeUri: ../src/node/function/iot-simulator-fleet-status/index.js
+      CodeUri: ./src/node/function/iot-simulator-fleet-status/index.js
       Environment:
         Variables:
           DDB_TABLE_NAME: !Ref IoTLoadSimulationFleetStatusDDBTable
@@ -237,3 +238,8 @@ Resources:
                }
            ]
         }'
+
+Outputs:
+  FleetStatusDDBTableName:
+    Description: "Name of the DynamoDB table which contains the simulated fleet statuses"
+    Value: !Ref IoTLoadSimulationFleetStatusDDBTable

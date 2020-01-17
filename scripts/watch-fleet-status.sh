@@ -2,7 +2,7 @@
 
 DEVICE_STATUS=$1
 
-if [ -z "$DEVICE_STATUS"]; then
+if [ -z "$DEVICE_STATUS" ]; then
   DEVICE_STATUS=connected
 fi
 

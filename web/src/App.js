@@ -1,5 +1,6 @@
 import React from 'react'
 import Grid from '@material-ui/core/Grid'
+import { API } from 'aws-amplify';
 import ResourceUsageEstimator from './ResourceUsageEstimator'
 import SimulationRequestForm from './SimulationRequestForm'
 import AwsServiceLimitsTable from './AwsServiceLimitsTable'
@@ -71,6 +72,29 @@ export default class App extends React.Component {
   handleSubmit(event) {
     console.log('Submitting simulation request')
     event.preventDefault()
+
+    let { controls, resourceUsageEstimate } = this.state
+    let messagesPerThing = resourceUsageEstimate.find( element => element.key === "messagesPerThing").value
+
+    let request = {
+        body: {
+          "total-things": controls.totalThings,
+          "clients-per-worker": controls.clientsPerWorker,
+          "total-messages-per-client": messagesPerThing,
+          "seconds-between-sns-events": controls.secondsBetweenSnsMessages,
+          "seconds-between-mqtt-messages": controls.secondsBetweenMqttMessages
+        },
+        headers: {
+          "Access-Control-Allow-Origin" : "*", // Required for CORS support to work
+        },
+    }
+
+    //'iot-simulator-engine'
+    API.post('iotsimapi', '/engine', request).then(response => {
+        console.log(`successfully submitted simulation engine request: ${response}`)
+    }).catch(error => {
+        console.log(`Failed to submit simulation engine request: ${JSON.stringify(error.response)}`)
+    })
   }
 
   computeEstimates(controls){
@@ -107,7 +131,7 @@ export default class App extends React.Component {
     let estimatedDuration = durationPerWorker + (secondsBetweenSnsMessages * (totalWorkers - 1))
     let messagesPerSecond = Math.ceil(mqttMessageTotal / estimatedDuration)
     //TODO - this value has some bearing based on the secondsBetweenSnsMessages value, which isn't adjustable at the moment;
-    //but once it's a variable we can play with, adjust this calculation as it correlates to that value 
+    //but once it's a variable we can play with, adjust this calculation as it correlates to that value
     let connectionRequestsPerSecond = clientsPerWorker
 
     setValue("totalWorkers", totalWorkers, (totalWorkers > 1000))

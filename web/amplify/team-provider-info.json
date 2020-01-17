@@ -10,6 +10,11 @@
             "StackName": "amplify-awsiotsimulatorweb-dev-153146",
             "StackId": "arn:aws:cloudformation:us-east-1:068311527115:stack/amplify-awsiotsimulatorweb-dev-153146/bb34e5d0-318c-11ea-aed2-1201663355d3",
             "AmplifyAppId": "d382bngesh0y53"
+        },
+        "categories": {
+            "auth": {
+                "cognitoead7a84f": {}
+            }
         }
     }
 }
