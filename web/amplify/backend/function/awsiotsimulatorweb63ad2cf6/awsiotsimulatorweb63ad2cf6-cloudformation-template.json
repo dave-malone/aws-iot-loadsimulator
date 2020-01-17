@@ -62,7 +62,7 @@
 				"Runtime": "nodejs10.x",
 				"Timeout": "25",
 				"Code": {
-					"S3Bucket": "amplify-awsiotsimulatorweb-dev-153146-deployment",
+					"S3Bucket": "amplify-awsiotsimulatorweb-dev-184005-deployment",
 					"S3Key": "amplify-builds/awsiotsimulatorweb63ad2cf6-3041555866566d4c614f-build.zip"
 				}
 			}
